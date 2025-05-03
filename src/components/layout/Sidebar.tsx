@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, LogOut } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -13,6 +14,8 @@ interface SidebarItemProps {
 
 interface SidebarProps {
   onEndSession?: () => void;
+  onSectionChange: (section: string) => void;
+  activeSection: string;
 }
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick }) => {
@@ -31,8 +34,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick 
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ onEndSession }) => {
-  const [activeItem, setActiveItem] = useState("dashboard");
+const Sidebar: React.FC<SidebarProps> = ({ onEndSession, onSectionChange, activeSection }) => {
+  const navigate = useNavigate();
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <Activity size={18} /> },
@@ -56,8 +59,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onEndSession }) => {
             key={item.id}
             icon={item.icon}
             label={item.label}
-            active={activeItem === item.id}
-            onClick={() => setActiveItem(item.id)}
+            active={activeSection === item.id}
+            onClick={() => onSectionChange(item.id)}
           />
         ))}
       </div>

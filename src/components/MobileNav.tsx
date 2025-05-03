@@ -6,9 +6,11 @@ import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, M
 
 interface MobileNavProps {
   onEndSession?: () => void;
+  onSectionChange: (section: string) => void;
+  activeSection: string;
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ onEndSession }) => {
+const MobileNav: React.FC<MobileNavProps> = ({ onEndSession, onSectionChange, activeSection }) => {
   const [open, setOpen] = useState(false);
   
   const navItems = [
@@ -19,6 +21,11 @@ const MobileNav: React.FC<MobileNavProps> = ({ onEndSession }) => {
     { id: "brain-waves", label: "Brain Waves", icon: <AudioWaveform size={18} /> },
     { id: "reports", label: "Reports", icon: <ChartLine size={18} /> }
   ];
+
+  const handleNavItemClick = (id: string) => {
+    onSectionChange(id);
+    setOpen(false);
+  };
 
   const handleEndSession = () => {
     setOpen(false);
@@ -46,9 +53,9 @@ const MobileNav: React.FC<MobileNavProps> = ({ onEndSession }) => {
             {navItems.map((item) => (
               <Button
                 key={item.id}
-                variant="ghost"
+                variant={activeSection === item.id ? "secondary" : "ghost"}
                 className="justify-start gap-2"
-                onClick={() => setOpen(false)}
+                onClick={() => handleNavItemClick(item.id)}
               >
                 {item.icon}
                 {item.label}

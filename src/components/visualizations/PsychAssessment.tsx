@@ -25,15 +25,15 @@ const PsychAssessment: React.FC<PsychAssessmentProps> = ({ assessment, className
 
   return (
     <div className={cn(
-      "rounded-lg border p-4 shadow-sm", 
+      "rounded-lg border p-5 shadow-md bg-mind-softgray border-l-4 border-mind-darkpurple", 
       className
     )}>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{state}</h3>
+          <h3 className="text-xl font-semibold text-gray-900">{state}</h3>
           <p className="text-sm text-gray-500">AI-assisted assessment</p>
         </div>
-        <div className={cn("text-sm font-medium", getConfidenceColor())}>
+        <div className={cn("text-md font-medium", getConfidenceColor())}>
           {confidence}% confidence
         </div>
       </div>
@@ -41,7 +41,7 @@ const PsychAssessment: React.FC<PsychAssessmentProps> = ({ assessment, className
       <div className="mb-4">
         <div className="flex flex-wrap gap-2 mt-2">
           {tags.map((tag, index) => (
-            <Badge key={index} variant="secondary" className="bg-mind-softgray text-gray-700">
+            <Badge key={index} variant="secondary" className="bg-mind-softgray text-gray-700 border border-gray-300">
               {tag}
             </Badge>
           ))}
@@ -49,9 +49,9 @@ const PsychAssessment: React.FC<PsychAssessmentProps> = ({ assessment, className
       </div>
       
       {recommendation && (
-        <div className="mt-4 pt-3 border-t border-gray-100">
+        <div className="mt-4 pt-3 border-t border-gray-200">
           <h4 className="text-sm font-medium text-gray-900 mb-1">Recommendation</h4>
-          <p className="text-sm text-gray-600">{recommendation}</p>
+          <p className="text-sm text-gray-600 bg-white p-3 rounded-md border border-gray-100">{recommendation}</p>
         </div>
       )}
     </div>
