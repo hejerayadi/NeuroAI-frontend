@@ -2,9 +2,13 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu, LogOut } from "lucide-react";
 
-const MobileNav = () => {
+interface MobileNavProps {
+  onEndSession?: () => void;
+}
+
+const MobileNav: React.FC<MobileNavProps> = ({ onEndSession }) => {
   const [open, setOpen] = useState(false);
   
   const navItems = [
@@ -15,6 +19,13 @@ const MobileNav = () => {
     { id: "brain-waves", label: "Brain Waves", icon: <AudioWaveform size={18} /> },
     { id: "reports", label: "Reports", icon: <ChartLine size={18} /> }
   ];
+
+  const handleEndSession = () => {
+    setOpen(false);
+    if (onEndSession) {
+      onEndSession();
+    }
+  };
 
   return (
     <div className="md:hidden">
@@ -45,8 +56,8 @@ const MobileNav = () => {
             ))}
           </div>
           
-          <div className="mt-auto pt-4 border-t absolute bottom-8 left-4 right-4">
-            <div className="flex items-center px-2 py-2">
+          <div className="mt-auto pt-4 border-t absolute bottom-20 left-4 right-4">
+            <div className="flex items-center px-2 py-2 mb-4">
               <div className="w-8 h-8 rounded-full bg-mind-purple text-white flex items-center justify-center mr-2">
                 <span className="text-sm font-medium">DR</span>
               </div>
@@ -55,6 +66,15 @@ const MobileNav = () => {
                 <p className="text-xs text-gray-500">Neuropsychologist</p>
               </div>
             </div>
+            
+            <Button 
+              variant="destructive" 
+              className="w-full gap-2"
+              onClick={handleEndSession}
+            >
+              <LogOut size={16} />
+              End Session
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

@@ -2,13 +2,17 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
-import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, LogOut } from "lucide-react";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
   onClick?: () => void;
+}
+
+interface SidebarProps {
+  onEndSession?: () => void;
 }
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick }) => {
@@ -27,7 +31,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick 
   );
 };
 
-const Sidebar = () => {
+const Sidebar: React.FC<SidebarProps> = ({ onEndSession }) => {
   const [activeItem, setActiveItem] = useState("dashboard");
 
   const sidebarItems = [
@@ -59,7 +63,7 @@ const Sidebar = () => {
       </div>
       
       <div className="mt-auto pt-4 border-t">
-        <div className="flex items-center px-3 py-2">
+        <div className="flex items-center px-3 py-2 mb-4">
           <div className="w-8 h-8 rounded-full bg-mind-purple text-white flex items-center justify-center mr-2">
             <span className="text-sm font-medium">DR</span>
           </div>
@@ -68,6 +72,15 @@ const Sidebar = () => {
             <p className="text-xs text-gray-500">Neuropsychologist</p>
           </div>
         </div>
+        
+        <Button 
+          variant="destructive" 
+          className="w-full gap-2"
+          onClick={onEndSession}
+        >
+          <LogOut size={16} />
+          End Session
+        </Button>
       </div>
     </aside>
   );
