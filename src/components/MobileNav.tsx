@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Brain, HeartPulse, Waveform, MessageSquare, ChartLine, Activity, Menu } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu } from "lucide-react";
 
 const MobileNav = () => {
   const [open, setOpen] = useState(false);
@@ -12,7 +12,7 @@ const MobileNav = () => {
     { id: "eeg", label: "EEG Analysis", icon: <Brain size={18} /> },
     { id: "ecg", label: "Heart Rate", icon: <HeartPulse size={18} /> },
     { id: "speech", label: "Speech Analysis", icon: <MessageSquare size={18} /> },
-    { id: "brain-waves", label: "Brain Waves", icon: <Waveform size={18} /> },
+    { id: "brain-waves", label: "Brain Waves", icon: <AudioWaveform size={18} /> },
     { id: "reports", label: "Reports", icon: <ChartLine size={18} /> }
   ];
 

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
-import { Brain, HeartPulse, Waveform, MessageSquare, ChartLine, Activity } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity } from "lucide-react";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -35,7 +35,7 @@ const Sidebar = () => {
     { id: "eeg", label: "EEG Analysis", icon: <Brain size={18} /> },
     { id: "ecg", label: "Heart Rate", icon: <HeartPulse size={18} /> },
     { id: "speech", label: "Speech Analysis", icon: <MessageSquare size={18} /> },
-    { id: "brain-waves", label: "Brain Waves", icon: <Waveform size={18} /> },
+    { id: "brain-waves", label: "Brain Waves", icon: <AudioWaveform size={18} /> },
     { id: "reports", label: "Reports", icon: <ChartLine size={18} /> }
   ];
 
