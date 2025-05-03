@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Download, ArrowLeft, FileText } from 'lucide-react';
+import { toast } from "@/components/ui/use-toast";
+import { generatePdfReport } from '@/utils/reportGenerator';
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -10,12 +12,26 @@ const Reports = () => {
 
   const handleDownloadReport = () => {
     setIsGenerating(true);
-    // Simulate PDF generation
+    
+    // Simulate processing time then generate the PDF
     setTimeout(() => {
-      setIsGenerating(false);
-      // In a real app, this would trigger a PDF download
-      alert('PDF Report Downloaded');
-    }, 2000);
+      try {
+        generatePdfReport();
+        toast({
+          title: "Report downloaded",
+          description: "Your session report has been successfully generated and downloaded.",
+        });
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Download failed",
+          description: "There was a problem generating your report. Please try again.",
+        });
+        console.error("PDF generation error:", error);
+      } finally {
+        setIsGenerating(false);
+      }
+    }, 1500);
   };
 
   const handleBackToHome = () => {

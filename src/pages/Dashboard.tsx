@@ -4,13 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Dashboard from '@/components/dashboard/Dashboard';
+import { toast } from "@/components/ui/use-toast";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("dashboard");
   
   const handleEndSession = () => {
-    // In a real app, we would clean up the session here
+    toast({
+      title: "Session ended",
+      description: "Your session has been successfully ended. You can now access the report.",
+    });
     navigate('/reports');
   };
 
