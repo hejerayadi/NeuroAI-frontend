@@ -24,7 +24,10 @@ const PsychAssessment: React.FC<PsychAssessmentProps> = ({ assessment, className
   };
 
   return (
-    <div className={cn("bg-white rounded-lg border p-4", className)}>
+    <div className={cn(
+      "rounded-lg border p-4 shadow-sm", 
+      className
+    )}>
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{state}</h3>

@@ -1,4 +1,3 @@
-
 // Generate dummy ECG data
 export const generateEcgData = (count: number = 100) => {
   const data = [];
@@ -64,6 +63,30 @@ export const generateEegData = (count: number = 100) => {
     });
   }
   
+  return data;
+};
+
+// Generate dummy EOG data
+export const generateEogData = (count: number) => {
+  const data = [];
+  for (let i = 0; i < count; i++) {
+    data.push({
+      time: `${i * 5}ms`,
+      value: Math.cos(i * 0.05) * 3 + (Math.random() * 1.5 - 0.75)
+    });
+  }
+  return data;
+};
+
+// Generate dummy tone data
+export const generateToneData = (count: number) => {
+  const data = [];
+  for (let i = 0; i < count; i++) {
+    data.push({
+      time: `${i * 10}ms`,
+      value: Math.sin(i * 0.2) * 4 + (Math.random() * 3 - 1.5)
+    });
+  }
   return data;
 };
 
