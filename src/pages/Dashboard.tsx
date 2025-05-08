@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNav from '@/components/MobileNav';
@@ -9,6 +9,25 @@ import { toast } from "@/components/ui/use-toast";
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [sessionType, setSessionType] = useState<'normal' | 'gaming'>('normal');
+  const [patientName, setPatientName] = useState<string>('');
+  
+  useEffect(() => {
+    // Retrieve session data from storage
+    const storedPatientName = sessionStorage.getItem('patientName');
+    const storedSessionType = sessionStorage.getItem('sessionType') as 'normal' | 'gaming';
+    
+    if (storedPatientName) {
+      setPatientName(storedPatientName);
+    }
+    
+    if (storedSessionType) {
+      setSessionType(storedSessionType);
+    }
+    
+    // Clear session storage to avoid data persistence between sessions
+    // sessionStorage.clear(); - commented out so you can refresh the page without losing data
+  }, []);
   
   const handleEndSession = () => {
     toast({
@@ -37,11 +56,18 @@ const DashboardPage = () => {
             onSectionChange={handleSectionChange}
             activeSection={activeSection}
           />
-          <h1 className="text-xl font-bold">Mind State Navigator</h1>
+          <h1 className="text-xl font-bold">
+            Mind State Navigator 
+            {sessionType === 'gaming' && <span className="ml-2 text-blue-600">(Gaming Session)</span>}
+          </h1>
         </header>
         
         <main className="flex-1">
-          <Dashboard activeSection={activeSection} />
+          <Dashboard 
+            activeSection={activeSection} 
+            sessionType={sessionType}
+            patientName={patientName}
+          />
         </main>
       </div>
     </div>

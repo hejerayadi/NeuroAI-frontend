@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DashboardHeader from '../layout/DashboardHeader';
 import PatientCard from '../layout/PatientCard';
@@ -22,9 +21,15 @@ import {
 
 interface DashboardProps {
   activeSection?: string;
+  sessionType?: 'normal' | 'gaming';
+  patientName?: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  activeSection = "dashboard",
+  sessionType = 'normal',
+  patientName = ''
+}) => {
   // State for our dummy data
   const [ecgData, setEcgData] = useState(generateEcgData(50));
   const [eegData, setEegData] = useState(generateEegData(50));
@@ -39,7 +44,11 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) =>
   const [isProcessing, setIsProcessing] = useState(false);
   const [textConfidence, setTextConfidence] = useState(85);
   const [cameraActive, setCameraActive] = useState(true);
-  const patient = getPatientData();
+
+  // Get patient data with the provided name if available
+  const patient = patientName ? 
+    { ...getPatientData(), name: patientName } : 
+    getPatientData();
 
   // Simulate real-time data updates
   useEffect(() => {
@@ -157,35 +166,37 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) =>
           <EmotionTag 
             emotion={eegEmotion} 
             type={mapEmotionToType(eegEmotion)} 
-            source="EEG/EOG" 
+            source="EEG" 
             pulsing={true}
           />
         </div>
       </PatientCard>
 
-      {/* EOG Chart */}
-      <PatientCard 
-        title="EOG Eye Movement" 
-        description="Real-time eye activity tracking"
-        className="md:col-span-1"
-      >
-        <div className="h-64">
-          <SimpleLineChart 
-            data={eogData} 
-            dataKey="value" 
-            color="#3b82f6" 
-            height={230}
-          />
-        </div>
-        <div className="mt-4 flex justify-center">
-          <EmotionTag 
-            emotion={eegEmotion} 
-            type={mapEmotionToType(eegEmotion)} 
-            source="EEG/EOG" 
-            pulsing={true}
-          />
-        </div>
-      </PatientCard>
+      {/* Show EOG Chart only for normal sessions */}
+      {sessionType === 'normal' && (
+        <PatientCard 
+          title="EOG Eye Movement" 
+          description="Real-time eye activity tracking"
+          className="md:col-span-1"
+        >
+          <div className="h-64">
+            <SimpleLineChart 
+              data={eogData} 
+              dataKey="value" 
+              color="#3b82f6" 
+              height={230}
+            />
+          </div>
+          <div className="mt-4 flex justify-center">
+            <EmotionTag 
+              emotion={eegEmotion} 
+              type={mapEmotionToType(eegEmotion)} 
+              source="EEG/EOG" 
+              pulsing={true}
+            />
+          </div>
+        </PatientCard>
+      )}
 
       {/* Facial Expression Analysis */}
       <PatientCard 
@@ -242,7 +253,7 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) =>
           <EmotionTag 
             emotion={eegEmotion} 
             type={mapEmotionToType(eegEmotion)} 
-            source="EEG/EOG" 
+            source="EEG" 
             pulsing={true}
           />
           <EmotionTag 
@@ -266,8 +277,71 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) =>
         description="Analysis from combined data sources"
         className="md:col-span-2 lg:col-span-1"
       >
-        <PsychAssessment assessment={assessment} className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" />
+        <PsychAssessment 
+          assessment={assessment} 
+          className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
+        />
       </PatientCard>
+    </div>
+  );
+
+  // Render function for EEG (different for gaming vs normal sessions)
+  const renderEeg = () => (
+    <div className="grid grid-cols-1 gap-6">
+      <PatientCard 
+        title={`EEG Brain Activity ${sessionType === 'gaming' ? '(Gaming)' : ''}`}
+        description={sessionType === 'gaming' ? 
+          "Brain activity during gaming session" : 
+          "Real-time brain wave patterns"}
+        className="col-span-1"
+      >
+        <div className="h-[400px]">
+          <SimpleLineChart 
+            data={eegData} 
+            dataKey="value" 
+            color="#9b87f5" 
+            height={350}
+          />
+        </div>
+        <div className="mt-6 flex justify-center">
+          <div className="flex flex-col items-center">
+            <h3 className="text-xl font-semibold mb-4">Current Emotional State</h3>
+            <EmotionTag 
+              emotion={eegEmotion} 
+              type={mapEmotionToType(eegEmotion)} 
+              source="EEG" 
+              pulsing={true}
+              className="transform scale-125"
+            />
+          </div>
+        </div>
+      </PatientCard>
+
+      {/* Show EOG only for normal sessions */}
+      {sessionType === 'normal' && (
+        <PatientCard 
+          title="EOG Eye Movement" 
+          description="Real-time eye activity tracking"
+          className="col-span-1"
+        >
+          <div className="h-[350px]">
+            <SimpleLineChart 
+              data={eogData} 
+              dataKey="value" 
+              color="#3b82f6" 
+              height={300}
+            />
+          </div>
+          <div className="mt-4 flex justify-center">
+            <EmotionTag 
+              emotion={eegEmotion} 
+              type={mapEmotionToType(eegEmotion)} 
+              source="EEG/EOG" 
+              pulsing={true}
+            />
+          </div>
+        </PatientCard>
+      )}
     </div>
   );
 
@@ -298,58 +372,6 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) =>
               className="transform scale-125"
             />
           </div>
-        </div>
-      </PatientCard>
-    </div>
-  );
-
-  // Render function for EEG/EOG
-  const renderEeg = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <PatientCard 
-        title="EEG Brain Activity" 
-        description="Real-time brain wave patterns"
-        className="col-span-1"
-      >
-        <div className="h-[350px]">
-          <SimpleLineChart 
-            data={eegData} 
-            dataKey="value" 
-            color="#9b87f5" 
-            height={300}
-          />
-        </div>
-      </PatientCard>
-
-      <PatientCard 
-        title="EOG Eye Movement" 
-        description="Real-time eye activity tracking"
-        className="col-span-1"
-      >
-        <div className="h-[350px]">
-          <SimpleLineChart 
-            data={eogData} 
-            dataKey="value" 
-            color="#3b82f6" 
-            height={300}
-          />
-        </div>
-      </PatientCard>
-
-      <PatientCard 
-        title="Combined EEG/EOG Analysis" 
-        description="Emotional state based on brain and eye activity"
-        className="md:col-span-2"
-      >
-        <div className="flex flex-col items-center p-6">
-          <h3 className="text-xl font-semibold mb-4">Current Emotional State</h3>
-          <EmotionTag 
-            emotion={eegEmotion} 
-            type={mapEmotionToType(eegEmotion)} 
-            source="EEG/EOG" 
-            pulsing={true}
-            className="transform scale-125"
-          />
         </div>
       </PatientCard>
     </div>
@@ -438,7 +460,7 @@ const Dashboard: React.FC<DashboardProps> = ({ activeSection = "dashboard" }) =>
           <EmotionTag 
             emotion={eegEmotion} 
             type={mapEmotionToType(eegEmotion)} 
-            source="EEG/EOG" 
+            source="EEG" 
             pulsing={true}
           />
           <EmotionTag 

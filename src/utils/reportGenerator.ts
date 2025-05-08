@@ -1,191 +1,211 @@
 
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { getPatientData } from './dummyData';
+import 'jspdf-autotable';
+import { addImage } from "jspdf"; // This is a mock import, in real life we would import appropriate data
+import { 
+  generateEcgData, 
+  generateEegData, 
+  getRandomAssessment, 
+  getRandomBrainWaveText, 
+  getRandomEmotion,
+  getPatientData
+} from './dummyData';
 
-// Define the report data structure
-interface ReportData {
-  ecgData: Array<{time: string, value: number}>;
-  eegData: Array<{time: string, value: number}>;
-  emotionalStates: Array<{source: string, emotion: string, timestamp: string}>;
-  brainWaveTexts: Array<{text: string, confidence: number, timestamp: string}>;
-  assessment: {
-    state: string;
-    confidence: number;
-    tags: string[];
-    recommendation?: string;
-  };
+// Extend the jsPDF type to include the autoTable method
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    previousAutoTableEndY?: number;
+  }
 }
 
-// Generate dummy report data
+interface ReportData {
+  patientName: string;
+  sessionDate: string;
+  sessionDuration: string;
+  patientId: string;
+  ecgData: { time: string; value: number }[];
+  eegData: { time: string; value: number }[];
+  ecgEmotion: string;
+  eegEmotion: string;
+  facialEmotion: string;
+  speechEmotion: string;
+  brainWaveTexts: string[];
+  assessment: string;
+}
+
+// Function to generate dummy report data
 const generateReportData = (): ReportData => {
-  const timestamps = Array.from({ length: 10 }, (_, i) => 
-    new Date(Date.now() - (10 - i) * 5 * 60000).toLocaleTimeString()
-  );
-  
-  // Sample emotions for the report
-  const emotions = ['Calm', 'Anxious', 'Focused', 'Distracted', 'Stressed', 'Relaxed', 'Worried', 'Content'];
-  const sources = ['ECG', 'EEG', 'Facial', 'Speech'];
-  
-  // Sample brain wave texts
-  const brainWaveTexamples = [
-    "I need to focus on my breathing",
-    "Why am I feeling this way?",
-    "I should try to relax more",
-    "I'm worried about tomorrow",
-    "This session is helping me",
-    "Maybe I should talk about my week",
-    "I'm starting to feel better"
-  ];
+  const patient = getPatientData();
   
   return {
-    ecgData: Array.from({ length: 5 }, (_, i) => ({
-      time: timestamps[i * 2],
-      value: Math.round((Math.sin(i * 0.5) * 5 + 70 + Math.random() * 5) * 10) / 10
-    })),
-    eegData: Array.from({ length: 5 }, (_, i) => ({
-      time: timestamps[i * 2],
-      value: Math.round((Math.cos(i * 0.3) * 3 + Math.random() * 2) * 10) / 10
-    })),
-    emotionalStates: Array.from({ length: 8 }, (_, i) => ({
-      source: sources[i % sources.length],
-      emotion: emotions[Math.floor(Math.random() * emotions.length)],
-      timestamp: timestamps[i]
-    })),
-    brainWaveTexts: Array.from({ length: 5 }, (_, i) => ({
-      text: brainWaveTexamples[Math.floor(Math.random() * brainWaveTexamples.length)],
-      confidence: Math.round(60 + Math.random() * 35),
-      timestamp: timestamps[i * 2]
-    })),
-    assessment: {
-      state: 'Mild Anxiety Disorder',
-      confidence: 87,
-      tags: ['Anxious', 'Stressed', 'Worried', 'Responsive'],
-      recommendation: 'Consider scheduling weekly sessions focusing on stress management techniques. Patient shows signs of mild anxiety that could benefit from cognitive behavioral therapy approaches.'
-    }
+    patientName: patient.name,
+    sessionDate: new Date().toLocaleDateString(),
+    sessionDuration: '45 minutes',
+    patientId: patient.id,
+    ecgData: generateEcgData(10),
+    eegData: generateEegData(10),
+    ecgEmotion: getRandomEmotion('ecg'),
+    eegEmotion: getRandomEmotion('eeg'),
+    facialEmotion: getRandomEmotion('facial'),
+    speechEmotion: getRandomEmotion('speech'),
+    brainWaveTexts: [
+      getRandomBrainWaveText(),
+      getRandomBrainWaveText(),
+      getRandomBrainWaveText()
+    ],
+    assessment: getRandomAssessment()
   };
 };
 
-// Generate PDF report
 export const generatePdfReport = () => {
-  const pdf = new jsPDF();
-  const patientData = getPatientData();
-  const reportData = generateReportData();
-  const currentDate = new Date().toLocaleDateString();
+  // Create a new PDF document
+  const doc = new jsPDF();
+  const data = generateReportData();
   
-  // Title and header
-  pdf.setFontSize(22);
-  pdf.setTextColor(85, 51, 139); // Purple color
-  pdf.text('Mind State Navigator', 105, 15, { align: 'center' });
+  // Add a header with the Mind State Navigator logo and title
+  doc.setFillColor(75, 85, 99);
+  doc.rect(0, 0, 210, 20, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.text('Mind State Navigator - Session Report', 105, 10, { align: 'center' });
+
+  // Add report summary section
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(14);
+  doc.text('Session Summary', 14, 30);
   
-  pdf.setFontSize(18);
-  pdf.setTextColor(0, 0, 0);
-  pdf.text('Session Report', 105, 25, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setLineWidth(0.1);
+  doc.line(14, 32, 196, 32);
   
   // Patient information
-  pdf.setFontSize(12);
-  pdf.text(`Patient: ${patientData.name}`, 20, 40);
-  pdf.text(`Patient ID: ${patientData.id}`, 20, 48);
-  pdf.text(`Session Date: ${currentDate}`, 20, 56);
-  pdf.text(`Session Duration: 45 minutes`, 20, 64);
+  doc.setFontSize(11);
+  doc.text(`Patient Name: ${data.patientName}`, 14, 40);
+  doc.text(`Patient ID: ${data.patientId}`, 14, 46);
+  doc.text(`Session Date: ${data.sessionDate}`, 14, 52);
+  doc.text(`Session Duration: ${data.sessionDuration}`, 14, 58);
+
+  // ECG Data Section
+  doc.setFontSize(14);
+  doc.text('1. ECG Data Analysis', 14, 70);
+  doc.setFontSize(10);
+  doc.line(14, 72, 196, 72);
   
-  // 1. ECG and EEG Data Analysis
-  pdf.setFontSize(14);
-  pdf.setTextColor(85, 51, 139);
-  pdf.text('1. ECG and EEG Data Analysis', 20, 80);
-  
-  pdf.setFontSize(12);
-  pdf.setTextColor(0, 0, 0);
-  
-  // ECG Data Table
-  pdf.text('ECG Data (Heart Rate):', 20, 90);
-  autoTable(pdf, {
-    startY: 95,
-    head: [['Timestamp', 'BPM']],
-    body: reportData.ecgData.map(data => [data.time, data.value.toString()]),
+  // Add ECG data table
+  doc.autoTable({
+    startY: 75,
+    head: [['Time', 'Value']],
+    body: data.ecgData.map(item => [item.time, item.value.toFixed(2)]),
     theme: 'striped',
-    headStyles: { fillColor: [155, 135, 245] }
+    headStyles: { fillColor: [117, 107, 177] },
+    margin: { left: 14, right: 14 },
   });
   
-  // EEG Data Table
-  pdf.text('EEG Data (Brain Activity):', 20, pdf.lastAutoTable.finalY + 15);
-  autoTable(pdf, {
-    startY: pdf.lastAutoTable.finalY + 20,
-    head: [['Timestamp', 'Value']],
-    body: reportData.eegData.map(data => [data.time, data.value.toString()]),
+  // Add ECG emotion data
+  let currentY = doc.previousAutoTableEndY || 90;
+  doc.setFontSize(11);
+  doc.text(`Emotional State from ECG: ${data.ecgEmotion}`, 14, currentY + 10);
+  
+  // EEG Data Section
+  doc.setFontSize(14);
+  doc.text('2. EEG Data Analysis', 14, currentY + 20);
+  doc.setFontSize(10);
+  doc.line(14, currentY + 22, 196, currentY + 22);
+  
+  // Add EEG data table
+  doc.autoTable({
+    startY: currentY + 25,
+    head: [['Time', 'Value']],
+    body: data.eegData.map(item => [item.time, item.value.toFixed(2)]),
     theme: 'striped',
-    headStyles: { fillColor: [155, 135, 245] }
+    headStyles: { fillColor: [117, 107, 177] },
+    margin: { left: 14, right: 14 },
   });
+
+  // Add EEG emotion data
+  currentY = doc.previousAutoTableEndY || (currentY + 40);
+  doc.setFontSize(11);
+  doc.text(`Emotional State from EEG: ${data.eegEmotion}`, 14, currentY + 10);
   
-  // 2. Emotional State Patterns
-  pdf.setFontSize(14);
-  pdf.setTextColor(85, 51, 139);
-  pdf.text('2. Emotional State Patterns and Transitions', 20, pdf.lastAutoTable.finalY + 20);
-  
-  pdf.setFontSize(12);
-  pdf.setTextColor(0, 0, 0);
-  autoTable(pdf, {
-    startY: pdf.lastAutoTable.finalY + 25,
-    head: [['Time', 'Source', 'Detected Emotion']],
-    body: reportData.emotionalStates.map(item => [item.timestamp, item.source, item.emotion]),
-    theme: 'striped',
-    headStyles: { fillColor: [155, 135, 245] }
-  });
-  
-  // Add a new page for the rest of the content
-  pdf.addPage();
-  
-  // 3. Brain Wave Speech Interpretation
-  pdf.setFontSize(14);
-  pdf.setTextColor(85, 51, 139);
-  pdf.text('3. Brain Wave Speech Interpretation Logs', 20, 20);
-  
-  pdf.setFontSize(12);
-  pdf.setTextColor(0, 0, 0);
-  autoTable(pdf, {
-    startY: 25,
-    head: [['Time', 'Interpreted Text', 'Confidence']],
-    body: reportData.brainWaveTexts.map(item => [
-      item.timestamp, 
-      item.text, 
-      `${item.confidence}%`
-    ]),
-    theme: 'striped',
-    headStyles: { fillColor: [155, 135, 245] }
-  });
-  
-  // 4. AI Psychological Assessment
-  pdf.setFontSize(14);
-  pdf.setTextColor(85, 51, 139);
-  pdf.text('4. AI-assisted Psychological Assessment', 20, pdf.lastAutoTable.finalY + 20);
-  
-  pdf.setFontSize(12);
-  pdf.setTextColor(0, 0, 0);
-  pdf.text(`Assessment: ${reportData.assessment.state}`, 20, pdf.lastAutoTable.finalY + 30);
-  pdf.text(`Confidence: ${reportData.assessment.confidence}%`, 20, pdf.lastAutoTable.finalY + 38);
-  
-  // Tags
-  pdf.text('Tags:', 20, pdf.lastAutoTable.finalY + 46);
-  let tagsText = reportData.assessment.tags.join(', ');
-  pdf.text(tagsText, 40, pdf.lastAutoTable.finalY + 46);
-  
-  // Recommendation
-  if (reportData.assessment.recommendation) {
-    pdf.text('Recommendation:', 20, pdf.lastAutoTable.finalY + 54);
-    
-    // Handle multi-line recommendation text
-    const splitText = pdf.splitTextToSize(
-      reportData.assessment.recommendation, 
-      170 // max width
-    );
-    
-    pdf.text(splitText, 20, pdf.lastAutoTable.finalY + 62);
+  // Check if we need a new page for the emotional patterns section
+  if (currentY > 180) {
+    doc.addPage();
+    currentY = 20;
   }
   
-  // Summary and signature
-  pdf.text('Generated by Mind State Navigator AI System', 105, 250, { align: 'center' });
-  pdf.text(`Report Date: ${currentDate}`, 105, 258, { align: 'center' });
+  // Emotional Patterns Section
+  doc.setFontSize(14);
+  doc.text('3. Emotional State Patterns', 14, currentY + 20);
+  doc.setFontSize(10);
+  doc.line(14, currentY + 22, 196, currentY + 22);
+  
+  // Add emotion data table
+  doc.autoTable({
+    startY: currentY + 25,
+    head: [['Source', 'Detected Emotion']],
+    body: [
+      ['ECG', data.ecgEmotion],
+      ['EEG', data.eegEmotion],
+      ['Facial Expression', data.facialEmotion],
+      ['Speech', data.speechEmotion]
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [117, 107, 177] },
+    margin: { left: 14, right: 14 },
+  });
+  
+  // Brain Wave Text Interpretation Section
+  currentY = doc.previousAutoTableEndY || (currentY + 50);
+  
+  // Check if we need a new page
+  if (currentY > 180) {
+    doc.addPage();
+    currentY = 20;
+  } else {
+    currentY += 10;
+  }
+  
+  doc.setFontSize(14);
+  doc.text('4. Brain Wave Speech Interpretation Logs', 14, currentY + 10);
+  doc.setFontSize(10);
+  doc.line(14, currentY + 12, 196, currentY + 12);
+  
+  // Add brain wave text data
+  doc.setFontSize(11);
+  data.brainWaveTexts.forEach((text, index) => {
+    doc.text(`${index + 1}. "${text}"`, 14, currentY + 20 + (index * 8));
+  });
+  
+  // AI Psychological Assessment
+  currentY += 45;
+  
+  // Check if we need a new page
+  if (currentY > 180) {
+    doc.addPage();
+    currentY = 20;
+  }
+  
+  doc.setFontSize(14);
+  doc.text('5. AI-Assisted Psychological Assessment', 14, currentY);
+  doc.setFontSize(10);
+  doc.line(14, currentY + 2, 196, currentY + 2);
+  
+  doc.setFontSize(11);
+  
+  // Word wrap the assessment text to fit in the page
+  const splitText = doc.splitTextToSize(data.assessment, 170);
+  doc.text(splitText, 14, currentY + 10);
+  
+  // Add footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Mind State Navigator - Confidential Medical Report - Page ${i} of ${pageCount}`, 105, 285, { align: 'center' });
+  }
   
   // Save the PDF
-  pdf.save(`Patient_Report_${patientData.id}_${currentDate.replace(/\//g, '-')}.pdf`);
+  doc.save(`mind_state_report_${data.patientId}_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
