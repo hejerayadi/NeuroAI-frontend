@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu, LogOut } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu, LogOut, Camera } from "lucide-react";
 
 interface MobileNavProps {
   onEndSession?: () => void;
@@ -17,6 +17,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ onEndSession, onSectionChange, ac
     { id: "dashboard", label: "Dashboard", icon: <Activity size={18} /> },
     { id: "eeg", label: "EEG Analysis", icon: <Brain size={18} /> },
     { id: "ecg", label: "Heart Rate", icon: <HeartPulse size={18} /> },
+    { id: "facial-analysis", label: "Facial Analysis", icon: <Camera size={18} /> },
     { id: "speech", label: "Speech Analysis", icon: <MessageSquare size={18} /> },
     { id: "brain-waves", label: "Brain Waves", icon: <AudioWaveform size={18} /> },
     { id: "reports", label: "Reports", icon: <ChartLine size={18} /> }

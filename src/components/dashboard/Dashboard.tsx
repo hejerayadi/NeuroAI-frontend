@@ -7,6 +7,7 @@ import BrainWaveText from '../visualizations/BrainWaveText';
 import PsychAssessment from '../visualizations/PsychAssessment';
 import FacialExpression from '../visualizations/FacialExpression';
 import ToneAnalysis from '../visualizations/ToneAnalysis';
+import FacialAnalysisPage from './FacialAnalysisPage';
 import { 
   generateEcgData, 
   generateEegData,
@@ -480,6 +481,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 
+  // Render function for Facial Analysis
+  const renderFacialAnalysis = () => (
+    <FacialAnalysisPage patientName={patientName} />
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case "ecg":
@@ -492,6 +498,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         return renderBrainWaves();
       case "reports":
         return renderReports();
+      case "facial-analysis":
+        return renderFacialAnalysis();
       default:
         return renderDashboard();
     }

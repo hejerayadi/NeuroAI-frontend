@@ -42,15 +42,15 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 relative">
       <Sidebar 
         onEndSession={handleEndSession}
         onSectionChange={handleSectionChange}
         activeSection={activeSection}
       />
       
-      <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b h-16 flex items-center px-4 md:px-6">
+      <div className="flex-1 flex flex-col md:ml-56 lg:ml-64">
+        <header className="bg-white border-b h-16 flex items-center px-4 md:px-6 sticky top-0 z-10">
           <MobileNav 
             onEndSession={handleEndSession}
             onSectionChange={handleSectionChange}

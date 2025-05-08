@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
-import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, LogOut } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, LogOut, Camera } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 interface SidebarItemProps {
@@ -41,13 +41,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onEndSession, onSectionChange, active
     { id: "dashboard", label: "Dashboard", icon: <Activity size={18} /> },
     { id: "eeg", label: "EEG Analysis", icon: <Brain size={18} /> },
     { id: "ecg", label: "Heart Rate", icon: <HeartPulse size={18} /> },
+    { id: "facial-analysis", label: "Facial Analysis", icon: <Camera size={18} /> },
     { id: "speech", label: "Speech Analysis", icon: <MessageSquare size={18} /> },
     { id: "brain-waves", label: "Brain Waves", icon: <AudioWaveform size={18} /> },
     { id: "reports", label: "Reports", icon: <ChartLine size={18} /> }
   ];
 
   return (
-    <aside className="hidden md:flex md:w-56 lg:w-64 flex-col h-screen bg-white border-r p-4">
+    <aside className="hidden md:flex md:w-56 lg:w-64 flex-col h-screen bg-white border-r p-4 fixed">
       <div className="flex items-center gap-2 mb-6 px-3 py-2">
         <Brain className="w-6 h-6 text-mind-purple" />
         <h2 className="text-lg font-bold">Mind State</h2>

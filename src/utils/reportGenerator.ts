@@ -1,211 +1,172 @@
 
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { addImage } from "jspdf"; // This is a mock import, in real life we would import appropriate data
-import { 
-  generateEcgData, 
-  generateEegData, 
-  getRandomAssessment, 
-  getRandomBrainWaveText, 
-  getRandomEmotion,
-  getPatientData
-} from './dummyData';
+import autoTable from 'jspdf-autotable';
+import { getPatientData } from './dummyData';
 
-// Extend the jsPDF type to include the autoTable method
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    previousAutoTableEndY?: number;
-  }
-}
-
-interface ReportData {
-  patientName: string;
-  sessionDate: string;
-  sessionDuration: string;
-  patientId: string;
-  ecgData: { time: string; value: number }[];
-  eegData: { time: string; value: number }[];
-  ecgEmotion: string;
-  eegEmotion: string;
-  facialEmotion: string;
-  speechEmotion: string;
-  brainWaveTexts: string[];
-  assessment: string;
-}
-
-// Function to generate dummy report data
-const generateReportData = (): ReportData => {
-  const patient = getPatientData();
-  
-  return {
-    patientName: patient.name,
-    sessionDate: new Date().toLocaleDateString(),
-    sessionDuration: '45 minutes',
-    patientId: patient.id,
-    ecgData: generateEcgData(10),
-    eegData: generateEegData(10),
-    ecgEmotion: getRandomEmotion('ecg'),
-    eegEmotion: getRandomEmotion('eeg'),
-    facialEmotion: getRandomEmotion('facial'),
-    speechEmotion: getRandomEmotion('speech'),
-    brainWaveTexts: [
-      getRandomBrainWaveText(),
-      getRandomBrainWaveText(),
-      getRandomBrainWaveText()
-    ],
-    assessment: getRandomAssessment()
-  };
-};
-
-export const generatePdfReport = () => {
-  // Create a new PDF document
+export const generatePdfReport = (patientName: string, sessionType: 'normal' | 'gaming') => {
   const doc = new jsPDF();
-  const data = generateReportData();
-  
-  // Add a header with the Mind State Navigator logo and title
-  doc.setFillColor(75, 85, 99);
-  doc.rect(0, 0, 210, 20, 'F');
-  doc.setTextColor(255, 255, 255);
+  const patient = getPatientData();
+  const currentDate = new Date().toLocaleDateString();
+
+  // Title
+  doc.setFontSize(22);
+  doc.setTextColor(44, 62, 80);
+  doc.text("Mind State Navigator Report", 20, 20);
+
+  // Patient info
+  doc.setFontSize(12);
+  doc.text(`Patient: ${patientName || patient.name}`, 20, 30);
+  doc.text(`ID: ${patient.id}`, 20, 36);
+  doc.text(`Session Type: ${sessionType === 'gaming' ? 'Gaming Analysis' : 'Standard Analysis'}`, 20, 42);
+  doc.text(`Date: ${currentDate}`, 20, 48);
+  doc.text(`Session Duration: ${patient.sessionTime}`, 20, 54);
+
+  // Horizontal line
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, 60, 190, 60);
+
+  // Report Summary
   doc.setFontSize(16);
-  doc.text('Mind State Navigator - Session Report', 105, 10, { align: 'center' });
-
-  // Add report summary section
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
-  doc.text('Session Summary', 14, 30);
-  
-  doc.setFontSize(10);
-  doc.setLineWidth(0.1);
-  doc.line(14, 32, 196, 32);
-  
-  // Patient information
+  doc.text("Summary", 20, 70);
   doc.setFontSize(11);
-  doc.text(`Patient Name: ${data.patientName}`, 14, 40);
-  doc.text(`Patient ID: ${data.patientId}`, 14, 46);
-  doc.text(`Session Date: ${data.sessionDate}`, 14, 52);
-  doc.text(`Session Duration: ${data.sessionDuration}`, 14, 58);
+  doc.text("This report provides a comprehensive analysis of the patient's neurological", 20, 80);
+  doc.text("and emotional state during the recorded session.", 20, 86);
 
-  // ECG Data Section
-  doc.setFontSize(14);
-  doc.text('1. ECG Data Analysis', 14, 70);
-  doc.setFontSize(10);
-  doc.line(14, 72, 196, 72);
-  
-  // Add ECG data table
-  doc.autoTable({
-    startY: 75,
-    head: [['Time', 'Value']],
-    body: data.ecgData.map(item => [item.time, item.value.toFixed(2)]),
-    theme: 'striped',
-    headStyles: { fillColor: [117, 107, 177] },
-    margin: { left: 14, right: 14 },
-  });
-  
-  // Add ECG emotion data
-  let currentY = doc.previousAutoTableEndY || 90;
+  // ECG Data Analysis
+  doc.setFontSize(16);
+  doc.text("1. ECG Data Analysis", 20, 100);
   doc.setFontSize(11);
-  doc.text(`Emotional State from ECG: ${data.ecgEmotion}`, 14, currentY + 10);
   
-  // EEG Data Section
-  doc.setFontSize(14);
-  doc.text('2. EEG Data Analysis', 14, currentY + 20);
-  doc.setFontSize(10);
-  doc.line(14, currentY + 22, 196, currentY + 22);
-  
-  // Add EEG data table
-  doc.autoTable({
-    startY: currentY + 25,
-    head: [['Time', 'Value']],
-    body: data.eegData.map(item => [item.time, item.value.toFixed(2)]),
-    theme: 'striped',
-    headStyles: { fillColor: [117, 107, 177] },
-    margin: { left: 14, right: 14 },
+  // Create sample ECG data for the report
+  const ecgTable = [];
+  for (let i = 0; i < 5; i++) {
+    ecgTable.push([
+      new Date(Date.now() - i * 60000).toLocaleTimeString(),
+      (70 + Math.floor(Math.random() * 20)).toString(),
+      ['Normal', 'Elevated', 'Normal', 'Calm', 'Normal'][i],
+      ['Neutral', 'Anxious', 'Relaxed', 'Content', 'Focused'][i]
+    ]);
+  }
+
+  autoTable(doc, {
+    head: [['Timestamp', 'Heart Rate (BPM)', 'Status', 'Emotional Indicator']],
+    body: ecgTable,
+    startY: 105,
+    theme: 'grid',
+    styles: { fontSize: 9 }
   });
 
-  // Add EEG emotion data
-  currentY = doc.previousAutoTableEndY || (currentY + 40);
+  // EEG Brain Wave Analysis
+  doc.setFontSize(16);
+  doc.text("2. EEG Brain Wave Analysis", 20, doc.lastAutoTable.finalY + 15);
   doc.setFontSize(11);
-  doc.text(`Emotional State from EEG: ${data.eegEmotion}`, 14, currentY + 10);
   
-  // Check if we need a new page for the emotional patterns section
-  if (currentY > 180) {
-    doc.addPage();
-    currentY = 20;
+  // Create sample EEG data
+  const eegTable = [];
+  const waveTypes = ['Alpha', 'Beta', 'Theta', 'Delta', 'Gamma'];
+  for (let i = 0; i < 5; i++) {
+    eegTable.push([
+      waveTypes[i],
+      (10 + Math.floor(Math.random() * 20)).toString() + ' Hz',
+      ['High', 'Normal', 'Low', 'Normal', 'Elevated'][i],
+      ['Relaxation', 'Focus', 'Creativity', 'Deep Sleep', 'Information Processing'][i]
+    ]);
   }
+
+  autoTable(doc, {
+    head: [['Wave Type', 'Frequency', 'Amplitude', 'Association']],
+    body: eegTable,
+    startY: doc.lastAutoTable.finalY + 20,
+    theme: 'grid',
+    styles: { fontSize: 9 }
+  });
+
+  // Brain Wave Speech Interpretation
+  doc.setFontSize(16);
+  doc.text("3. Brain Wave Speech Interpretation", 20, doc.lastAutoTable.finalY + 15);
+  doc.setFontSize(11);
+  doc.text("The following patterns were detected and interpreted:", 20, doc.lastAutoTable.finalY + 25);
   
-  // Emotional Patterns Section
-  doc.setFontSize(14);
-  doc.text('3. Emotional State Patterns', 14, currentY + 20);
-  doc.setFontSize(10);
-  doc.line(14, currentY + 22, 196, currentY + 22);
+  const brainWaveInterp = [
+    "• \"I feel calm and relaxed during this session.\" (85% confidence)",
+    "• \"The exercises are helping me focus better.\" (78% confidence)",
+    "• \"I'm starting to understand the connection between thoughts and emotions.\" (80% confidence)"
+  ];
   
-  // Add emotion data table
-  doc.autoTable({
-    startY: currentY + 25,
-    head: [['Source', 'Detected Emotion']],
-    body: [
-      ['ECG', data.ecgEmotion],
-      ['EEG', data.eegEmotion],
-      ['Facial Expression', data.facialEmotion],
-      ['Speech', data.speechEmotion]
-    ],
-    theme: 'striped',
-    headStyles: { fillColor: [117, 107, 177] },
-    margin: { left: 14, right: 14 },
+  let y = doc.lastAutoTable.finalY + 30;
+  brainWaveInterp.forEach(item => {
+    doc.text(item, 25, y);
+    y += 6;
+  });
+
+  // Psychological Assessment
+  doc.setFontSize(16);
+  doc.text("4. AI Psychological Assessment", 20, y + 10);
+  doc.setFontSize(11);
+
+  const assessment = {
+    state: "The patient shows signs of mild anxiety with periods of calm and focus. The emotional patterns suggest an overall stable condition with brief fluctuations during specific stimuli.",
+    confidence: 85,
+    tags: ["Mild Anxiety", "Good Focus", "Emotional Stability", "Responsive"],
+    recommendation: "Continue with the current therapy plan. Consider introducing more relaxation exercises during periods of elevated stress."
+  };
+
+  doc.text("Assessment:", 20, y + 20);
+  
+  // Word wrap for assessment text (simple implementation)
+  const wrapText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
+    const words = text.split(' ');
+    let line = '';
+    let testLine = '';
+    let testWidth = 0;
+    let currentY = y;
+
+    for(let i = 0; i < words.length; i++) {
+      testLine = line + words[i] + ' ';
+      testWidth = doc.getTextWidth(testLine);
+      
+      if (testWidth > maxWidth && i > 0) {
+        doc.text(line, x, currentY);
+        line = words[i] + ' ';
+        currentY += lineHeight;
+      }
+      else {
+        line = testLine;
+      }
+    }
+    doc.text(line, x, currentY);
+    return currentY;
+  };
+
+  let currentY = wrapText(assessment.state, 20, y + 25, 170, 6);
+  
+  doc.text(`Confidence: ${assessment.confidence}%`, 20, currentY + 10);
+  
+  doc.text("Tags:", 20, currentY + 20);
+  doc.setFontSize(9);
+  let tagX = 20;
+  assessment.tags.forEach(tag => {
+    const tagWidth = doc.getTextWidth(tag) + 10;
+    if (tagX + tagWidth > 190) {
+      tagX = 20;
+      currentY += 8;
+    }
+    doc.text(tag, tagX, currentY + 26);
+    tagX += tagWidth + 10;
   });
   
-  // Brain Wave Text Interpretation Section
-  currentY = doc.previousAutoTableEndY || (currentY + 50);
-  
-  // Check if we need a new page
-  if (currentY > 180) {
-    doc.addPage();
-    currentY = 20;
-  } else {
-    currentY += 10;
-  }
-  
-  doc.setFontSize(14);
-  doc.text('4. Brain Wave Speech Interpretation Logs', 14, currentY + 10);
-  doc.setFontSize(10);
-  doc.line(14, currentY + 12, 196, currentY + 12);
-  
-  // Add brain wave text data
   doc.setFontSize(11);
-  data.brainWaveTexts.forEach((text, index) => {
-    doc.text(`${index + 1}. "${text}"`, 14, currentY + 20 + (index * 8));
-  });
-  
-  // AI Psychological Assessment
-  currentY += 45;
-  
-  // Check if we need a new page
-  if (currentY > 180) {
-    doc.addPage();
-    currentY = 20;
-  }
-  
-  doc.setFontSize(14);
-  doc.text('5. AI-Assisted Psychological Assessment', 14, currentY);
-  doc.setFontSize(10);
-  doc.line(14, currentY + 2, 196, currentY + 2);
-  
-  doc.setFontSize(11);
-  
-  // Word wrap the assessment text to fit in the page
-  const splitText = doc.splitTextToSize(data.assessment, 170);
-  doc.text(splitText, 14, currentY + 10);
-  
-  // Add footer
+  doc.text("Recommendation:", 20, currentY + 40);
+  wrapText(assessment.recommendation, 20, currentY + 46, 170, 6);
+
+  // Footer
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Mind State Navigator - Confidential Medical Report - Page ${i} of ${pageCount}`, 105, 285, { align: 'center' });
+    doc.text(`Mind State Navigator - Generated on ${currentDate} - Page ${i} of ${pageCount}`, 20, doc.internal.pageSize.height - 10);
   }
-  
-  // Save the PDF
-  doc.save(`mind_state_report_${data.patientId}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+  return doc;
 };
