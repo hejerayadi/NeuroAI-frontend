@@ -1,13 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import DashboardHeader from '../layout/DashboardHeader';
 import PatientCard from '../layout/PatientCard';
 import SimpleLineChart from '../charts/LineChart';
 import EmotionTag from '../visualizations/EmotionTag';
+import EmotionHistory from '../visualizations/EmotionHistory';
 import BrainWaveText from '../visualizations/BrainWaveText';
 import PsychAssessment from '../visualizations/PsychAssessment';
 import FacialExpression from '../visualizations/FacialExpression';
 import ToneAnalysis from '../visualizations/ToneAnalysis';
 import FacialAnalysisPage from './FacialAnalysisPage';
+import { format } from 'date-fns';
 import { 
   generateEcgData, 
   generateEegData,
@@ -45,6 +48,52 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [textConfidence, setTextConfidence] = useState(85);
   const [cameraActive, setCameraActive] = useState(true);
+  
+  // Historical emotion data
+  const [ecgHistory, setEcgHistory] = useState([
+    { time: format(new Date(Date.now() - 30 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
+    { time: format(new Date(Date.now() - 25 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
+    { time: format(new Date(Date.now() - 15 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
+    { time: format(new Date(Date.now() - 7 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
+  ]);
+  
+  const [eegHistory, setEegHistory] = useState([
+    { time: format(new Date(Date.now() - 28 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
+    { time: format(new Date(Date.now() - 21 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
+    { time: format(new Date(Date.now() - 14 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
+    { time: format(new Date(Date.now() - 5 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
+  ]);
+  
+  const [speechHistory, setSpeechHistory] = useState([
+    { time: format(new Date(Date.now() - 29 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
+    { time: format(new Date(Date.now() - 22 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
+    { time: format(new Date(Date.now() - 17 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
+    { time: format(new Date(Date.now() - 10 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
+    { time: format(new Date(Date.now() - 3 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
+  ]);
+  
+  const [brainWaveHistory, setBrainWaveHistory] = useState([
+    { 
+      time: format(new Date(Date.now() - 27 * 60000), 'HH:mm'), 
+      emotion: "Focused", 
+      text: getRandomBrainWaveText() 
+    },
+    { 
+      time: format(new Date(Date.now() - 20 * 60000), 'HH:mm'), 
+      emotion: "Relaxed", 
+      text: getRandomBrainWaveText() 
+    },
+    { 
+      time: format(new Date(Date.now() - 13 * 60000), 'HH:mm'), 
+      emotion: "Anxious", 
+      text: getRandomBrainWaveText() 
+    },
+    { 
+      time: format(new Date(Date.now() - 6 * 60000), 'HH:mm'), 
+      emotion: "Calm", 
+      text: getRandomBrainWaveText() 
+    },
+  ]);
 
   // Get patient data with the provided name if available
   const patient = patientName ? 
@@ -316,6 +365,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             />
           </div>
         </div>
+
+        <div className="mt-8 border-t pt-4">
+          <EmotionHistory
+            emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
+          />
+        </div>
       </PatientCard>
 
       {/* Show EOG only for normal sessions */}
@@ -374,6 +429,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             />
           </div>
         </div>
+        
+        <div className="mt-8 border-t pt-4">
+          <EmotionHistory
+            emotions={ecgHistory.map(item => ({ ...item, source: "ECG" }))}
+          />
+        </div>
       </PatientCard>
     </div>
   );
@@ -405,6 +466,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             />
           </div>
         </div>
+        
+        <div className="mt-8 border-t pt-4">
+          <EmotionHistory
+            emotions={speechHistory.map(item => ({ ...item, source: "Speech" }))}
+          />
+        </div>
       </PatientCard>
     </div>
   );
@@ -434,6 +501,12 @@ const Dashboard: React.FC<DashboardProps> = ({
               height={180}
             />
           </div>
+        </div>
+        
+        <div className="mt-8 border-t pt-4">
+          <EmotionHistory
+            emotions={brainWaveHistory}
+          />
         </div>
       </PatientCard>
     </div>
@@ -476,6 +549,20 @@ const Dashboard: React.FC<DashboardProps> = ({
             source="Speech" 
             pulsing={true}
           />
+        </div>
+        
+        <div className="mt-8 border-t pt-4">
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Emotion Progression</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <EmotionHistory
+              emotions={ecgHistory.map(item => ({ ...item, source: "ECG" }))}
+              className="mb-4"
+            />
+            <EmotionHistory
+              emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
+              className="mb-4"
+            />
+          </div>
         </div>
       </PatientCard>
     </div>

@@ -1,172 +1,150 @@
 
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { getPatientData } from './dummyData';
+import 'jspdf-autotable';
+import { format } from 'date-fns';
 
-export const generatePdfReport = (patientName: string, sessionType: 'normal' | 'gaming') => {
+interface ReportData {
+  patientName: string;
+  patientId: string;
+  sessionDate: Date;
+  ecgData?: { time: string; value: number }[];
+  eegData?: { time: string; value: number }[];
+  emotionalStates?: { time: string; emotion: string; source: string }[];
+  brainWaveTexts?: { time: string; text: string; confidence: number }[];
+  psychAssessment?: {
+    state: string;
+    confidence: number;
+    tags: string[];
+    recommendation?: string;
+  };
+}
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    previousAutoTableEndY: number;
+  }
+}
+
+export const generatePDFReport = (data: ReportData) => {
   const doc = new jsPDF();
-  const patient = getPatientData();
-  const currentDate = new Date().toLocaleDateString();
-
-  // Title
-  doc.setFontSize(22);
-  doc.setTextColor(44, 62, 80);
-  doc.text("Mind State Navigator Report", 20, 20);
-
+  const pageWidth = doc.internal.pageSize.width;
+  
+  // Header
+  doc.setFontSize(20);
+  doc.text('Mind State Navigator Report', pageWidth / 2, 20, { align: 'center' });
+  
   // Patient info
   doc.setFontSize(12);
-  doc.text(`Patient: ${patientName || patient.name}`, 20, 30);
-  doc.text(`ID: ${patient.id}`, 20, 36);
-  doc.text(`Session Type: ${sessionType === 'gaming' ? 'Gaming Analysis' : 'Standard Analysis'}`, 20, 42);
-  doc.text(`Date: ${currentDate}`, 20, 48);
-  doc.text(`Session Duration: ${patient.sessionTime}`, 20, 54);
-
+  doc.text(`Patient: ${data.patientName}`, 20, 35);
+  doc.text(`ID: ${data.patientId}`, 20, 42);
+  doc.text(`Session Date: ${format(data.sessionDate, 'PPP')}`, 20, 49);
+  doc.text(`Report Generated: ${format(new Date(), 'PPP pp')}`, 20, 56);
+  
   // Horizontal line
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 60, 190, 60);
-
-  // Report Summary
-  doc.setFontSize(16);
-  doc.text("Summary", 20, 70);
-  doc.setFontSize(11);
-  doc.text("This report provides a comprehensive analysis of the patient's neurological", 20, 80);
-  doc.text("and emotional state during the recorded session.", 20, 86);
-
-  // ECG Data Analysis
-  doc.setFontSize(16);
-  doc.text("1. ECG Data Analysis", 20, 100);
-  doc.setFontSize(11);
+  doc.setLineWidth(0.5);
+  doc.line(20, 60, pageWidth - 20, 60);
   
-  // Create sample ECG data for the report
-  const ecgTable = [];
-  for (let i = 0; i < 5; i++) {
-    ecgTable.push([
-      new Date(Date.now() - i * 60000).toLocaleTimeString(),
-      (70 + Math.floor(Math.random() * 20)).toString(),
-      ['Normal', 'Elevated', 'Normal', 'Calm', 'Normal'][i],
-      ['Neutral', 'Anxious', 'Relaxed', 'Content', 'Focused'][i]
-    ]);
+  // Section 1: ECG and EEG Data
+  doc.setFontSize(16);
+  doc.text('1. Physiological Data Analysis', 20, 70);
+  
+  // ECG Data Table
+  doc.setFontSize(14);
+  doc.text('ECG Data (Sample)', 20, 80);
+  
+  if (data.ecgData && data.ecgData.length > 0) {
+    doc.autoTable({
+      startY: 85,
+      head: [['Time', 'Value']],
+      body: data.ecgData.slice(0, 5).map(item => [item.time, item.value.toFixed(2)]),
+      theme: 'striped',
+      headStyles: { fillColor: [155, 135, 245] }
+    });
+    
+    // EEG Data Table
+    doc.text('EEG Data (Sample)', 20, doc.previousAutoTableEndY + 15);
+    
+    if (data.eegData && data.eegData.length > 0) {
+      doc.autoTable({
+        startY: doc.previousAutoTableEndY + 20,
+        head: [['Time', 'Value']],
+        body: data.eegData.slice(0, 5).map(item => [item.time, item.value.toFixed(2)]),
+        theme: 'striped',
+        headStyles: { fillColor: [155, 135, 245] }
+      });
+    }
   }
-
-  autoTable(doc, {
-    head: [['Timestamp', 'Heart Rate (BPM)', 'Status', 'Emotional Indicator']],
-    body: ecgTable,
-    startY: 105,
-    theme: 'grid',
-    styles: { fontSize: 9 }
-  });
-
-  // EEG Brain Wave Analysis
-  doc.setFontSize(16);
-  doc.text("2. EEG Brain Wave Analysis", 20, doc.lastAutoTable.finalY + 15);
-  doc.setFontSize(11);
   
-  // Create sample EEG data
-  const eegTable = [];
-  const waveTypes = ['Alpha', 'Beta', 'Theta', 'Delta', 'Gamma'];
-  for (let i = 0; i < 5; i++) {
-    eegTable.push([
-      waveTypes[i],
-      (10 + Math.floor(Math.random() * 20)).toString() + ' Hz',
-      ['High', 'Normal', 'Low', 'Normal', 'Elevated'][i],
-      ['Relaxation', 'Focus', 'Creativity', 'Deep Sleep', 'Information Processing'][i]
-    ]);
+  // Section 2: Emotional States
+  doc.text('2. Emotional State Analysis', 20, doc.previousAutoTableEndY + 20);
+  
+  if (data.emotionalStates && data.emotionalStates.length > 0) {
+    doc.autoTable({
+      startY: doc.previousAutoTableEndY + 25,
+      head: [['Time', 'Emotion', 'Source']],
+      body: data.emotionalStates.slice(0, 10).map(item => [item.time, item.emotion, item.source]),
+      theme: 'striped',
+      headStyles: { fillColor: [155, 135, 245] }
+    });
   }
-
-  autoTable(doc, {
-    head: [['Wave Type', 'Frequency', 'Amplitude', 'Association']],
-    body: eegTable,
-    startY: doc.lastAutoTable.finalY + 20,
-    theme: 'grid',
-    styles: { fontSize: 9 }
-  });
-
-  // Brain Wave Speech Interpretation
-  doc.setFontSize(16);
-  doc.text("3. Brain Wave Speech Interpretation", 20, doc.lastAutoTable.finalY + 15);
-  doc.setFontSize(11);
-  doc.text("The following patterns were detected and interpreted:", 20, doc.lastAutoTable.finalY + 25);
   
-  const brainWaveInterp = [
-    "• \"I feel calm and relaxed during this session.\" (85% confidence)",
-    "• \"The exercises are helping me focus better.\" (78% confidence)",
-    "• \"I'm starting to understand the connection between thoughts and emotions.\" (80% confidence)"
-  ];
+  // Add a new page if needed
+  if (doc.previousAutoTableEndY > 220) {
+    doc.addPage();
+  }
   
-  let y = doc.lastAutoTable.finalY + 30;
-  brainWaveInterp.forEach(item => {
-    doc.text(item, 25, y);
-    y += 6;
-  });
-
-  // Psychological Assessment
-  doc.setFontSize(16);
-  doc.text("4. AI Psychological Assessment", 20, y + 10);
-  doc.setFontSize(11);
-
-  const assessment = {
-    state: "The patient shows signs of mild anxiety with periods of calm and focus. The emotional patterns suggest an overall stable condition with brief fluctuations during specific stimuli.",
-    confidence: 85,
-    tags: ["Mild Anxiety", "Good Focus", "Emotional Stability", "Responsive"],
-    recommendation: "Continue with the current therapy plan. Consider introducing more relaxation exercises during periods of elevated stress."
-  };
-
-  doc.text("Assessment:", 20, y + 20);
+  // Section 3: Brain Wave Interpretation
+  doc.text('3. Brain Wave Interpretation', 20, doc.previousAutoTableEndY + 20);
   
-  // Word wrap for assessment text (simple implementation)
-  const wrapText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
-    const words = text.split(' ');
-    let line = '';
-    let testLine = '';
-    let testWidth = 0;
-    let currentY = y;
-
-    for(let i = 0; i < words.length; i++) {
-      testLine = line + words[i] + ' ';
-      testWidth = doc.getTextWidth(testLine);
+  if (data.brainWaveTexts && data.brainWaveTexts.length > 0) {
+    doc.autoTable({
+      startY: doc.previousAutoTableEndY + 25,
+      head: [['Time', 'Interpreted Text', 'Confidence']],
+      body: data.brainWaveTexts.slice(0, 5).map(item => [
+        item.time, 
+        item.text, 
+        `${item.confidence}%`
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [155, 135, 245] }
+    });
+  }
+  
+  // Section 4: Psychological Assessment
+  doc.text('4. AI Psychological Assessment', 20, doc.previousAutoTableEndY + 20);
+  
+  if (data.psychAssessment) {
+    doc.setFontSize(12);
+    doc.text(`Assessment: ${data.psychAssessment.state}`, 25, doc.previousAutoTableEndY + 30);
+    doc.text(`Confidence: ${data.psychAssessment.confidence}%`, 25, doc.previousAutoTableEndY + 37);
+    doc.text(`Tags: ${data.psychAssessment.tags.join(', ')}`, 25, doc.previousAutoTableEndY + 44);
+    
+    if (data.psychAssessment.recommendation) {
+      doc.text('Recommendation:', 25, doc.previousAutoTableEndY + 51);
+      doc.setFontSize(10);
       
-      if (testWidth > maxWidth && i > 0) {
-        doc.text(line, x, currentY);
-        line = words[i] + ' ';
-        currentY += lineHeight;
-      }
-      else {
-        line = testLine;
-      }
+      const splitText = doc.splitTextToSize(
+        data.psychAssessment.recommendation, 
+        pageWidth - 50
+      );
+      
+      doc.text(splitText, 30, doc.previousAutoTableEndY + 58);
     }
-    doc.text(line, x, currentY);
-    return currentY;
-  };
-
-  let currentY = wrapText(assessment.state, 20, y + 25, 170, 6);
-  
-  doc.text(`Confidence: ${assessment.confidence}%`, 20, currentY + 10);
-  
-  doc.text("Tags:", 20, currentY + 20);
-  doc.setFontSize(9);
-  let tagX = 20;
-  assessment.tags.forEach(tag => {
-    const tagWidth = doc.getTextWidth(tag) + 10;
-    if (tagX + tagWidth > 190) {
-      tagX = 20;
-      currentY += 8;
-    }
-    doc.text(tag, tagX, currentY + 26);
-    tagX += tagWidth + 10;
-  });
-  
-  doc.setFontSize(11);
-  doc.text("Recommendation:", 20, currentY + 40);
-  wrapText(assessment.recommendation, 20, currentY + 46, 170, 6);
-
-  // Footer
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Mind State Navigator - Generated on ${currentDate} - Page ${i} of ${pageCount}`, 20, doc.internal.pageSize.height - 10);
   }
-
-  return doc;
+  
+  // Footer
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text(
+      `Mind State Navigator - Page ${i} of ${totalPages}`, 
+      pageWidth / 2, 
+      doc.internal.pageSize.height - 10, 
+      { align: 'center' }
+    );
+  }
+  
+  return doc.output('blob');
 };

@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getRandomEmotion, mapEmotionToType } from '@/utils/dummyData';
 import PatientCard from '../layout/PatientCard';
 import FacialExpression from '../visualizations/FacialExpression';
 import EmotionTag from '../visualizations/EmotionTag';
+import EmotionHistory from '../visualizations/EmotionHistory';
+import { format } from 'date-fns';
 
 interface FacialAnalysisPageProps {
   patientName?: string;
@@ -12,9 +14,18 @@ interface FacialAnalysisPageProps {
 const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) => {
   const [facialEmotion, setFacialEmotion] = useState(getRandomEmotion('facial'));
   const [cameraActive, setCameraActive] = useState(true);
+  const [emotionHistory, setEmotionHistory] = useState([
+    { time: format(new Date(Date.now() - 30 * 60000), 'HH:mm'), emotion: 'Happy' },
+    { time: format(new Date(Date.now() - 25 * 60000), 'HH:mm'), emotion: 'Neutral' },
+    { time: format(new Date(Date.now() - 20 * 60000), 'HH:mm'), emotion: 'Sad' },
+    { time: format(new Date(Date.now() - 15 * 60000), 'HH:mm'), emotion: 'Angry' },
+    { time: format(new Date(Date.now() - 10 * 60000), 'HH:mm'), emotion: 'Surprised' },
+    { time: format(new Date(Date.now() - 5 * 60000), 'HH:mm'), emotion: 'Neutral' },
+    { time: format(new Date(Date.now() - 1 * 60000), 'HH:mm'), emotion: 'Happy' },
+  ]);
   
   // Update emotion every 5 seconds
-  React.useEffect(() => {
+  useEffect(() => {
     const emotionInterval = setInterval(() => {
       if (Math.random() > 0.5) {
         setFacialEmotion(getRandomEmotion('facial'));
@@ -91,21 +102,9 @@ const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) 
         className="col-span-1"
       >
         <div className="p-4">
-          <div className="flex flex-col space-y-3">
-            {['Happy', 'Neutral', 'Sad', 'Angry', 'Surprised', 'Neutral', 'Happy'].map((emotion, index) => (
-              <div key={index} className="flex justify-between items-center border-b pb-2">
-                <span className="text-sm text-gray-600">
-                  {new Date(Date.now() - (index * 5 * 60000)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                </span>
-                <EmotionTag 
-                  emotion={emotion} 
-                  type={mapEmotionToType(emotion as string)} 
-                  source="Facial" 
-                  pulsing={false}
-                />
-              </div>
-            ))}
-          </div>
+          <EmotionHistory 
+            emotions={emotionHistory.map(item => ({ ...item, source: 'Facial' }))}
+          />
         </div>
       </PatientCard>
     </div>
