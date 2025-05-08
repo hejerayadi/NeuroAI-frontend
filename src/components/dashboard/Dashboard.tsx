@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DashboardHeader from '../layout/DashboardHeader';
 import PatientCard from '../layout/PatientCard';
@@ -506,6 +505,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="mt-8 border-t pt-4">
           <EmotionHistory
             emotions={brainWaveHistory}
+            showText={true}
           />
         </div>
       </PatientCard>

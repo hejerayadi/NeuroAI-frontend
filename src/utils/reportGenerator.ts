@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
@@ -134,17 +133,22 @@ export const generatePDFReport = (data: ReportData) => {
   }
   
   // Footer
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.text(
-      `Mind State Navigator - Page ${i} of ${totalPages}`, 
-      pageWidth / 2, 
-      doc.internal.pageSize.height - 10, 
-      { align: 'center' }
-    );
+  const getHeight = () => {
+    const pageCount = doc.pages.length;
+    const totalPages = pageCount;
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.text(
+        `Mind State Navigator - Page ${i} of ${totalPages}`, 
+        pageWidth / 2, 
+        doc.internal.pageSize.height - 10, 
+        { align: 'center' }
+      );
+    }
   }
+  
+  getHeight();
   
   return doc.output('blob');
 };
