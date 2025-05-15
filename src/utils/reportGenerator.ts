@@ -1,7 +1,17 @@
 
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
+
+// Adding types for jsPDF with autotable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable: {
+      finalY: number;
+    };
+  }
+}
 
 export const generatePatientReport = (patientData: any) => {
   const doc = new jsPDF();
@@ -30,7 +40,7 @@ export const generatePatientReport = (patientData: any) => {
     item.text,
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Time', 'Emotion', 'Source', 'Text']],
     body: emotionHistoryData,
     startY: startY + 10,
@@ -82,7 +92,7 @@ export const generatePDFReport = (reportData: any) => {
     item.source
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Time', 'Emotional State', 'Source']],
     body: emotionalStatesData,
     startY: startY + 10,
@@ -90,7 +100,7 @@ export const generatePDFReport = (reportData: any) => {
   });
 
   // Brain Wave Text Table
-  startY = (doc as any).lastAutoTable.finalY + 20;
+  startY = doc.lastAutoTable.finalY + 20;
   doc.setFontSize(16);
   doc.text('Brain Wave Text Interpretations', pageWidth / 2, startY, { align: 'center' });
 
@@ -100,7 +110,7 @@ export const generatePDFReport = (reportData: any) => {
     `${item.confidence}%`
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Time', 'Interpreted Text', 'Confidence']],
     body: brainWaveData,
     startY: startY + 10,
@@ -109,7 +119,7 @@ export const generatePDFReport = (reportData: any) => {
   });
 
   // Psychological Assessment
-  startY = (doc as any).lastAutoTable.finalY + 20;
+  startY = doc.lastAutoTable.finalY + 20;
   doc.setFontSize(16);
   doc.text('Psychological Assessment', pageWidth / 2, startY, { align: 'center' });
   
