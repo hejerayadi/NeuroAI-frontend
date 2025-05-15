@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import PatientChat from "./pages/PatientChat";
+import PatientDashboard from "./pages/PatientDashboard";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<HomeRoleSelection />} />
           <Route path="/doctor" element={<SessionStart />} />
           <Route path="/patient" element={<PatientChat />} />
+          <Route path="/patient-dashboard" element={<PatientDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/reports" element={<Reports />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

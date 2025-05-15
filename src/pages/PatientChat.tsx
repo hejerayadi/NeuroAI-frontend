@@ -1,13 +1,14 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Brain, Send, Video, VideoOff } from 'lucide-react';
+import { Brain, Send, Video, VideoOff, Home } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 const PatientChat = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
     {role: 'assistant', content: 'Hello! I am your NeuroAI assistant. How are you feeling today?'}
   ]);
@@ -96,14 +97,24 @@ const PatientChat = () => {
           <Brain className="h-6 w-6 text-mind-purple mr-2" />
           <h1 className="text-xl font-semibold">NeuroAI Patient Portal</h1>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={toggleWebcam}
-          className="flex items-center gap-2"
-        >
-          {isWebcamOn ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
-          {isWebcamOn ? 'Turn Off Camera' : 'Turn On Camera'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1"
+          >
+            <Home className="h-4 w-4" />
+            <span className="hidden sm:inline">Home</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={toggleWebcam}
+            className="flex items-center gap-2"
+          >
+            {isWebcamOn ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+            {isWebcamOn ? 'Turn Off Camera' : 'Turn On Camera'}
+          </Button>
+        </div>
       </header>
 
       {/* Main content */}

@@ -49,7 +49,7 @@ export const generatePatientReport = (patientData: any) => {
   });
   
   // Footer
-  const totalPages = doc.internal.getNumberOfPages();
+  const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(10);
@@ -128,7 +128,7 @@ export const generatePDFReport = (reportData: any) => {
   doc.text(splitText, 20, startY + 10);
 
   // Footer
-  const totalPages = doc.internal.getNumberOfPages();
+  const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(10);

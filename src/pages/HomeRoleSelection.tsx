@@ -8,7 +8,12 @@ const HomeRoleSelection = () => {
   const navigate = useNavigate();
   
   const handleRoleSelection = (role: 'doctor' | 'patient') => {
-    navigate(`/${role}`);
+    if (role === 'doctor') {
+      navigate('/doctor');
+    } else {
+      // Redirect patients to patient dashboard instead of directly to chat
+      navigate('/patient-dashboard');
+    }
   };
 
   return (
