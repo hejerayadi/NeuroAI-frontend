@@ -40,7 +40,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [toneData, setToneData] = useState(generateToneData(50));
   const [ecgEmotion, setEcgEmotion] = useState(getRandomEmotion('ecg'));
   const [eegEmotion, setEegEmotion] = useState(getRandomEmotion('eeg'));
-  const [facialEmotion, setFacialEmotion] = useState(getRandomEmotion('facial'));
+  const [facialEmotion, setFacialEmotion] = useState('neutral');
+  const [facialEmotionType, setFacialEmotionType] = useState<'neutral' | 'positive' | 'negative' | 'warning'>('neutral');
   const [speechEmotion, setSpeechEmotion] = useState(getRandomEmotion('speech'));
   const [brainWaveText, setBrainWaveText] = useState(getRandomBrainWaveText());
   const [assessment, setAssessment] = useState(getRandomAssessment());
@@ -99,6 +100,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     { ...getPatientData(), name: patientName } : 
     getPatientData();
 
+  // Handle facial emotion updates from FacialExpression component
+  const handleFacialEmotionUpdate = (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => {
+    setFacialEmotion(emotion);
+    setFacialEmotionType(emotionType);
+  };
+
   // Simulate real-time data updates
   useEffect(() => {
     const updateInterval = setInterval(() => {
@@ -139,11 +146,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
     }, 1000);
 
-    // Emotion updates at a slower rate
+    // Emotion updates at a slower rate - REMOVING facial emotion random updates
     const emotionInterval = setInterval(() => {
       if (Math.random() > 0.7) setEcgEmotion(getRandomEmotion('ecg'));
       if (Math.random() > 0.7) setEegEmotion(getRandomEmotion('eeg'));
-      if (Math.random() > 0.7) setFacialEmotion(getRandomEmotion('facial'));
+      // Facial emotion is now controlled by the API
       if (Math.random() > 0.7) setSpeechEmotion(getRandomEmotion('speech'));
     }, 5000);
 
@@ -254,9 +261,9 @@ const Dashboard: React.FC<DashboardProps> = ({
         className="md:col-span-1"
       >
         <FacialExpression 
-          emotion={facialEmotion}
-          emotionType={mapEmotionToType(facialEmotion)}
           cameraActive={cameraActive}
+          onCameraToggle={(active) => setCameraActive(active)}
+          onEmotionUpdate={handleFacialEmotionUpdate}
         />
       </PatientCard>
 
@@ -307,7 +314,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
           <EmotionTag 
             emotion={facialEmotion} 
-            type={mapEmotionToType(facialEmotion)} 
+            type={facialEmotionType} 
             source="Facial" 
             pulsing={true}
           />
@@ -539,7 +546,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
           <EmotionTag 
             emotion={facialEmotion} 
-            type={mapEmotionToType(facialEmotion)} 
+            type={facialEmotionType} 
             source="Facial" 
             pulsing={true}
           />

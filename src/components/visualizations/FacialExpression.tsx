@@ -1,30 +1,35 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Camera, Eye, EyeOff, Video, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FacialExpressionProps {
-  emotion: string;
-  emotionType: 'neutral' | 'positive' | 'negative' | 'warning';
+  emotion?: string;
+  emotionType?: 'neutral' | 'positive' | 'negative' | 'warning';
   cameraActive: boolean;
   className?: string;
   onCameraToggle?: (active: boolean) => void;
+  onEmotionUpdate?: (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => void;
   fullView?: boolean;
 }
 
 const FacialExpression: React.FC<FacialExpressionProps> = ({ 
-  emotion, 
-  emotionType, 
+  emotion: initialEmotion = 'neutral', 
+  emotionType: initialEmotionType = 'neutral', 
   cameraActive: initialCameraActive,
   className,
   onCameraToggle,
+  onEmotionUpdate,
   fullView = false
 }) => {
   const [cameraActive, setCameraActive] = useState(initialCameraActive);
+  const [emotion, setEmotion] = useState(initialEmotion);
+  const [emotionType, setEmotionType] = useState(initialEmotionType);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const captureIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle camera activation/deactivation
   useEffect(() => {
@@ -37,6 +42,10 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
     return () => {
       if (stream) {
         deactivateCamera();
+      }
+      if (captureIntervalRef.current) {
+        clearInterval(captureIntervalRef.current);
+        captureIntervalRef.current = null;
       }
     };
   }, [cameraActive]);
@@ -56,6 +65,13 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Start capturing frames every 5 seconds
+        captureIntervalRef.current = setInterval(() => {
+          captureAndSendFrame();
+        }, 5000);
+        
+        console.log("Camera activated and frame capture started");
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -73,7 +89,84 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+
+      // Clear the capture interval
+      if (captureIntervalRef.current) {
+        clearInterval(captureIntervalRef.current);
+        captureIntervalRef.current = null;
+        console.log("Frame capture stopped");
+      }
     }
+  };
+
+  const captureAndSendFrame = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context) return;
+    
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw current video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert canvas to blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        console.error("Failed to capture frame");
+        return;
+      }
+      
+      console.log("Frame captured, sending to API...");
+      
+      try {
+        // Create form data and append the blob
+        const formData = new FormData();
+        formData.append('image', blob, 'frame.jpg');
+        
+        // Send to API
+        const response = await fetch('http://localhost:7500/api/facial/predict', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("API response received:", data);
+        
+        if (data.status === 'success' && data.emotion) {
+          setEmotion(data.emotion);
+          
+          // Set emotion type based on the detected emotion
+          let newEmotionType: 'neutral' | 'positive' | 'negative' | 'warning' = 'neutral';
+          if (['happy', 'surprise'].includes(data.emotion)) {
+            newEmotionType = 'positive';
+          } else if (['sad', 'angry', 'fear', 'disgust'].includes(data.emotion)) {
+            newEmotionType = 'negative';
+          } else if (['contempt'].includes(data.emotion)) {
+            newEmotionType = 'warning';
+          }
+          setEmotionType(newEmotionType);
+          
+          // Notify parent component of the emotion update
+          if (onEmotionUpdate) {
+            onEmotionUpdate(data.emotion, newEmotionType);
+          }
+          
+          console.log(`Emotion updated to: ${data.emotion} (${newEmotionType})`);
+        }
+      } catch (error) {
+        console.error("Error sending frame to API:", error);
+      }
+    }, 'image/jpeg', 0.95);
   };
 
   const toggleCamera = () => {
@@ -84,6 +177,9 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
 
   return (
     <div className={cn("flex flex-col items-center space-y-4", className)}>
+      {/* Hidden canvas for capturing frames */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      
       {/* Camera Feed */}
       <div className={cn(
         "relative bg-gray-900 rounded-lg overflow-hidden",
