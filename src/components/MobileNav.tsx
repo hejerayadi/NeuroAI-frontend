@@ -47,7 +47,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ onEndSession, onSectionChange, ac
         <SheetContent side="left" className="w-[240px] sm:w-[300px]">
           <div className="flex items-center gap-2 mb-6 px-2 py-4">
             <Brain className="w-6 h-6 text-mind-purple" />
-            <h2 className="text-lg font-bold">Mind State</h2>
+            <h2 className="text-lg font-bold">NeuroAI</h2>
           </div>
           
           <div className="flex flex-col space-y-3">

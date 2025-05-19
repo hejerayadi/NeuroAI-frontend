@@ -33,7 +33,7 @@ const Index = () => {
             onSectionChange={handleSectionChange}
             activeSection={activeSection}
           />
-          <h1 className="text-xl font-bold">Mind State Navigator</h1>
+          <h1 className="text-xl font-bold">NeuroAI - Beyond Speech Therapy</h1>
         </header>
         
         <main className="flex-1">
