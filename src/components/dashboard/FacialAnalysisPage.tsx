@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { getRandomEmotion, mapEmotionToType } from '@/utils/dummyData';
 import PatientCard from '../layout/PatientCard';
-import FacialExpression from '../visualizations/FacialExpression';
+import FacialExpression, { FacialEmotionEntry } from '../visualizations/FacialExpression';
 import EmotionTag from '../visualizations/EmotionTag';
-import EmotionHistory from '../visualizations/EmotionHistory';
 import { format } from 'date-fns';
 
 interface FacialAnalysisPageProps {
@@ -13,30 +11,35 @@ interface FacialAnalysisPageProps {
 
 const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) => {
   const [facialEmotion, setFacialEmotion] = useState(getRandomEmotion('facial'));
-  const [cameraActive, setCameraActive] = useState(true);
-  const [emotionHistory, setEmotionHistory] = useState([
-    { time: format(new Date(Date.now() - 30 * 60000), 'HH:mm'), emotion: 'Happy' },
-    { time: format(new Date(Date.now() - 25 * 60000), 'HH:mm'), emotion: 'Neutral' },
-    { time: format(new Date(Date.now() - 20 * 60000), 'HH:mm'), emotion: 'Sad' },
-    { time: format(new Date(Date.now() - 15 * 60000), 'HH:mm'), emotion: 'Angry' },
-    { time: format(new Date(Date.now() - 10 * 60000), 'HH:mm'), emotion: 'Surprised' },
-    { time: format(new Date(Date.now() - 5 * 60000), 'HH:mm'), emotion: 'Neutral' },
-    { time: format(new Date(Date.now() - 1 * 60000), 'HH:mm'), emotion: 'Happy' },
-  ]);
+  const [facialEmotionType, setFacialEmotionType] = useState<'neutral' | 'positive' | 'negative' | 'warning'>(
+    mapEmotionToType(facialEmotion)
+  );
+  const [cameraActive, setCameraActive] = useState(false);
+  const [emotionHistory, setEmotionHistory] = useState<FacialEmotionEntry[]>([]);
   
-  // Update emotion every 5 seconds
+  // Clear localStorage on initial load if needed
   useEffect(() => {
-    const emotionInterval = setInterval(() => {
-      if (Math.random() > 0.5) {
-        setFacialEmotion(getRandomEmotion('facial'));
-      }
-    }, 5000);
+    // Uncomment the next line to reset history on page refresh
+    // localStorage.removeItem('facialEmotionHistory');
     
-    return () => clearInterval(emotionInterval);
+    console.log("Facial Analysis Page initialized");
   }, []);
-  
+
+  // Handle camera toggle
   const handleCameraToggle = (active: boolean) => {
     setCameraActive(active);
+  };
+
+  // Handle emotion updates from FacialExpression component
+  const handleEmotionUpdate = (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => {
+    setFacialEmotion(emotion);
+    setFacialEmotionType(emotionType);
+  };
+
+  // Handle history updates from FacialExpression component
+  const handleHistoryUpdate = (history: FacialEmotionEntry[]) => {
+    console.log(`Facial emotion history update received with ${history.length} entries`);
+    setEmotionHistory(history);
   };
 
   return (
@@ -48,10 +51,10 @@ const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) 
       >
         <div className="p-4">
           <FacialExpression 
-            emotion={facialEmotion}
-            emotionType={mapEmotionToType(facialEmotion)}
             cameraActive={cameraActive}
             onCameraToggle={handleCameraToggle}
+            onEmotionUpdate={handleEmotionUpdate}
+            onHistoryUpdate={handleHistoryUpdate}
             fullView={true}
           />
         </div>
@@ -61,32 +64,8 @@ const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) 
             <h3 className="text-xl font-semibold mb-4 text-center">Emotional Analysis</h3>
             <div className="flex flex-wrap justify-center gap-4">
               <EmotionTag 
-                emotion="Happy" 
-                type="positive" 
-                source="Eyes" 
-                pulsing={facialEmotion === 'Happy'}
-              />
-              <EmotionTag 
-                emotion="Sad" 
-                type="negative" 
-                source="Mouth" 
-                pulsing={facialEmotion === 'Sad'}
-              />
-              <EmotionTag 
-                emotion="Angry" 
-                type="negative" 
-                source="Eyebrows" 
-                pulsing={facialEmotion === 'Angry'}
-              />
-              <EmotionTag 
-                emotion="Surprised" 
-                type="warning" 
-                source="Eyes" 
-                pulsing={facialEmotion === 'Surprised'}
-              />
-              <EmotionTag 
                 emotion={facialEmotion} 
-                type={mapEmotionToType(facialEmotion)} 
+                type={facialEmotionType} 
                 source="Overall" 
                 pulsing={true}
                 className="scale-110"
@@ -98,13 +77,38 @@ const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) 
       
       <PatientCard 
         title="Historical Emotion Data" 
-        description="Past 30 minutes of facial expression analysis"
+        description="Facial expression analysis history"
         className="col-span-1"
       >
         <div className="p-4">
-          <EmotionHistory 
-            emotions={emotionHistory.map(item => ({ ...item, source: 'Facial' }))}
-          />
+          {emotionHistory.length > 0 ? (
+            <div className="max-h-96 overflow-y-auto">
+              <table className="min-w-full bg-white">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 border-b text-left">Time</th>
+                    <th className="py-2 px-4 border-b text-left">Emotion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {emotionHistory.map((entry, index) => (
+                    <tr key={index}>
+                      <td className="py-2 px-4 border-b">{entry.formattedTime}</td>
+                      <td className="py-2 px-4 border-b">
+                        <EmotionTag 
+                          emotion={entry.emotion} 
+                          type={entry.emotionType} 
+                          source="Facial" 
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No facial emotion history available yet. Start the camera to begin capturing emotions.</p>
+          )}
         </div>
       </PatientCard>
     </div>

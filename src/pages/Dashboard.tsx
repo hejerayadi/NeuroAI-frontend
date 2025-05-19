@@ -1,16 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { toast } from "@/components/ui/use-toast";
+import { groqService } from '@/utils/groqService';
+import { Loader2 } from 'lucide-react';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sessionType, setSessionType] = useState<'normal' | 'gaming'>('normal');
   const [patientName, setPatientName] = useState<string>('');
+  const [sessionStartTime] = useState(new Date());
+  const [isEndingSession, setIsEndingSession] = useState(false);
   
   useEffect(() => {
     // Retrieve session data from storage
@@ -24,17 +27,67 @@ const DashboardPage = () => {
     if (storedSessionType) {
       setSessionType(storedSessionType);
     }
-    
-    // Clear session storage to avoid data persistence between sessions
-    // sessionStorage.clear(); - commented out so you can refresh the page without losing data
   }, []);
   
-  const handleEndSession = () => {
-    toast({
-      title: "Session ended",
-      description: "Your session has been successfully ended. You can now access the report.",
-    });
-    navigate('/reports');
+  const handleEndSession = async () => {
+    setIsEndingSession(true);
+    try {
+      // Get all historical data from localStorage
+      const assessmentHistory = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+      const eegHistory = JSON.parse(localStorage.getItem('eegHistory') || '[]');
+      const ecgHistory = JSON.parse(localStorage.getItem('ecgHistory') || '[]');
+      const speechHistory = JSON.parse(localStorage.getItem('speechHistory') || '[]');
+      const brainWaveHistory = JSON.parse(localStorage.getItem('brainWaveHistory') || '[]');
+      const facialEmotionHistory = JSON.parse(localStorage.getItem('facialEmotionHistory') || '[]');
+
+      // Calculate session duration
+      const sessionEndTime = new Date();
+      const duration = sessionEndTime.getTime() - sessionStartTime.getTime();
+      const hours = Math.floor(duration / (1000 * 60 * 60));
+      const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((duration % (1000 * 60)) / 1000);
+      const formattedDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+      // Generate final report using Groq
+      const reportData = {
+        patientName,
+        sessionType,
+        sessionDuration: formattedDuration,
+        assessmentHistory,
+        eegHistory,
+        ecgHistory,
+        speechHistory,
+        brainWaveHistory,
+        facialEmotionHistory
+      };
+
+      // Store report data and session duration
+      localStorage.setItem('sessionReport', JSON.stringify(reportData));
+      localStorage.setItem('sessionDuration', formattedDuration);
+
+      // Generate the report using Groq
+      const report = await groqService.generateSessionReport(reportData);
+
+      // Store the generated report
+      localStorage.setItem('generatedReport', report);
+
+      toast({
+        title: "Session ended",
+        description: "Your session has been successfully ended. You can now access the report.",
+      });
+
+      // Navigate to reports page
+      navigate('/reports');
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Error",
+        description: "There was an error generating the report. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsEndingSession(false);
+    }
   };
 
   const handleSectionChange = (section: string) => {
@@ -48,6 +101,7 @@ const DashboardPage = () => {
           onEndSession={handleEndSession}
           onSectionChange={handleSectionChange}
           activeSection={activeSection}
+          endSessionLoading={isEndingSession}
         />
       </div>
       
@@ -57,6 +111,7 @@ const DashboardPage = () => {
             onEndSession={handleEndSession}
             onSectionChange={handleSectionChange}
             activeSection={activeSection}
+            endSessionLoading={isEndingSession}
           />
           <h1 className="text-xl font-bold">
             Mind State Navigator 
@@ -69,6 +124,7 @@ const DashboardPage = () => {
             activeSection={activeSection} 
             sessionType={sessionType}
             patientName={patientName}
+            sessionStartTime={sessionStartTime}
           />
         </main>
       </div>

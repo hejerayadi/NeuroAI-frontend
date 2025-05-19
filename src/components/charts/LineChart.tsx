@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   LineChart,
@@ -24,6 +23,8 @@ interface LineChartProps {
   showGrid?: boolean;
   showAxis?: boolean;
   animated?: boolean;
+  strokeWidth?: number;
+  showDot?: boolean;
 }
 
 const SimpleLineChart: React.FC<LineChartProps> = ({
@@ -33,7 +34,9 @@ const SimpleLineChart: React.FC<LineChartProps> = ({
   height = 200,
   showGrid = true,
   showAxis = true,
-  animated = true
+  animated = true,
+  strokeWidth = 2,
+  showDot = false
 }) => {
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -63,8 +66,8 @@ const SimpleLineChart: React.FC<LineChartProps> = ({
           type="monotone"
           dataKey={dataKey}
           stroke={color}
-          strokeWidth={2}
-          dot={false}
+          strokeWidth={strokeWidth}
+          dot={showDot}
           isAnimationActive={animated}
           animationDuration={1000}
         />

@@ -1,30 +1,88 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Camera, Eye, EyeOff, Video, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
 
-interface FacialExpressionProps {
+// Define interface for facial emotion history entries
+export interface FacialEmotionEntry {
   emotion: string;
   emotionType: 'neutral' | 'positive' | 'negative' | 'warning';
+  timestamp: Date;
+  formattedTime: string;
+}
+
+interface FacialExpressionProps {
+  emotion?: string;
+  emotionType?: 'neutral' | 'positive' | 'negative' | 'warning';
   cameraActive: boolean;
   className?: string;
   onCameraToggle?: (active: boolean) => void;
+  onEmotionUpdate?: (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => void;
+  onHistoryUpdate?: (history: FacialEmotionEntry[]) => void;
   fullView?: boolean;
 }
 
 const FacialExpression: React.FC<FacialExpressionProps> = ({ 
-  emotion, 
-  emotionType, 
+  emotion: initialEmotion = 'neutral', 
+  emotionType: initialEmotionType = 'neutral', 
   cameraActive: initialCameraActive,
   className,
   onCameraToggle,
+  onEmotionUpdate,
+  onHistoryUpdate,
   fullView = false
 }) => {
   const [cameraActive, setCameraActive] = useState(initialCameraActive);
+  const [emotion, setEmotion] = useState(initialEmotion);
+  const [emotionType, setEmotionType] = useState(initialEmotionType);
+  const [emotionHistory, setEmotionHistory] = useState<FacialEmotionEntry[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const captureIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load history from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('facialEmotionHistory');
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+        // Convert string dates back to Date objects
+        const processedHistory = parsedHistory.map((entry: any) => ({
+          ...entry,
+          timestamp: new Date(entry.timestamp)
+        }));
+        setEmotionHistory(processedHistory);
+        
+        // Notify parent component if callback exists
+        if (onHistoryUpdate) {
+          onHistoryUpdate(processedHistory);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading facial emotion history:", error);
+      // Initialize with empty array if error
+      setEmotionHistory([]);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    if (emotionHistory.length > 0) {
+      try {
+        localStorage.setItem('facialEmotionHistory', JSON.stringify(emotionHistory));
+        
+        // Notify parent component of updated history
+        if (onHistoryUpdate) {
+          onHistoryUpdate(emotionHistory);
+        }
+      } catch (error) {
+        console.error("Error saving facial emotion history:", error);
+      }
+    }
+  }, [emotionHistory]);
 
   // Handle camera activation/deactivation
   useEffect(() => {
@@ -37,6 +95,10 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
     return () => {
       if (stream) {
         deactivateCamera();
+      }
+      if (captureIntervalRef.current) {
+        clearInterval(captureIntervalRef.current);
+        captureIntervalRef.current = null;
       }
     };
   }, [cameraActive]);
@@ -56,6 +118,13 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Start capturing frames every 5 seconds
+        captureIntervalRef.current = setInterval(() => {
+          captureAndSendFrame();
+        }, 5000);
+        
+        console.log("Camera activated and frame capture started");
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -73,7 +142,115 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+
+      // Clear the capture interval
+      if (captureIntervalRef.current) {
+        clearInterval(captureIntervalRef.current);
+        captureIntervalRef.current = null;
+        console.log("Frame capture stopped");
+      }
     }
+  };
+
+  const captureAndSendFrame = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context) return;
+    
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw current video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert canvas to blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        console.error("Failed to capture frame");
+        return;
+      }
+      
+      console.log("Frame captured, sending to API...");
+      
+      try {
+        // Create form data and append the blob
+        const formData = new FormData();
+        formData.append('image', blob, 'frame.jpg');
+        
+        // Send to API
+        const response = await fetch('http://localhost:7500/api/facial/predict', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("API response received:", data);
+        
+        if (data.status === 'success' && data.emotion) {
+          setEmotion(data.emotion);
+          
+          // Set emotion type based on the detected emotion
+          let newEmotionType: 'neutral' | 'positive' | 'negative' | 'warning' = 'neutral';
+          if (['happy', 'surprise'].includes(data.emotion)) {
+            newEmotionType = 'positive';
+          } else if (['sad', 'angry', 'fear', 'disgust'].includes(data.emotion)) {
+            newEmotionType = 'negative';
+          } else if (['contempt'].includes(data.emotion)) {
+            newEmotionType = 'warning';
+          }
+          setEmotionType(newEmotionType);
+          
+          // Create a new emotion history entry
+          const now = new Date();
+          const newEntry: FacialEmotionEntry = {
+            emotion: data.emotion,
+            emotionType: newEmotionType,
+            timestamp: now,
+            formattedTime: format(now, 'HH:mm:ss')
+          };
+          
+          // Add to history (prepend to show newest first)
+          // Use functional update to avoid closure issues with stale state
+          setEmotionHistory(prevHistory => {
+            const updatedHistory = [newEntry, ...prevHistory]; 
+            // Limit history to 50 entries
+            const trimmedHistory = updatedHistory.slice(0, 50);
+            
+            // Save to localStorage
+            try {
+              localStorage.setItem('facialEmotionHistory', JSON.stringify(trimmedHistory));
+            } catch (error) {
+              console.error("Error saving to localStorage:", error);
+            }
+            
+            // Notify parent if callback exists
+            if (onHistoryUpdate) {
+              setTimeout(() => onHistoryUpdate(trimmedHistory), 0);
+            }
+            
+            return trimmedHistory;
+          });
+          
+          // Notify parent components
+          if (onEmotionUpdate) {
+            onEmotionUpdate(data.emotion, newEmotionType);
+          }
+          
+          console.log(`Emotion updated to: ${data.emotion} (${newEmotionType})`);
+        }
+      } catch (error) {
+        console.error("Error sending frame to API:", error);
+      }
+    }, 'image/jpeg', 0.95);
   };
 
   const toggleCamera = () => {
@@ -84,6 +261,9 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
 
   return (
     <div className={cn("flex flex-col items-center space-y-4", className)}>
+      {/* Hidden canvas for capturing frames */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      
       {/* Camera Feed */}
       <div className={cn(
         "relative bg-gray-900 rounded-lg overflow-hidden",

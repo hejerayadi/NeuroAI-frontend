@@ -17,7 +17,7 @@ const PatientCard = ({ className, children, title, description }: PatientCardPro
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className='flex flex-col justify-center'>
         {children}
       </CardContent>
     </Card>

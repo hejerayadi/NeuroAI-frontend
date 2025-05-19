@@ -1,26 +1,32 @@
-
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 
 interface PsychAssessmentProps {
   assessment: {
-    state: string;
-    confidence: number;
-    tags: string[];
-    recommendation?: string;
+    emotionalState: string;
+    recommendations: string[];
+    riskLevel: 'low' | 'medium' | 'high';
+    insights: string[];
   };
   className?: string;
 }
 
 const PsychAssessment: React.FC<PsychAssessmentProps> = ({ assessment, className }) => {
-  const { state, confidence, tags, recommendation } = assessment;
+  const { emotionalState, recommendations, riskLevel, insights } = assessment;
   
-  // Determine the confidence level styling
-  const getConfidenceColor = () => {
-    if (confidence >= 80) return "text-green-600";
-    if (confidence >= 60) return "text-amber-600";
-    return "text-red-600";
+  // Determine the risk level styling
+  const getRiskLevelColor = () => {
+    switch (riskLevel) {
+      case 'high':
+        return "text-red-600";
+      case 'medium':
+        return "text-amber-600";
+      case 'low':
+        return "text-green-600";
+      default:
+        return "text-gray-600";
+    }
   };
 
   return (
@@ -30,30 +36,31 @@ const PsychAssessment: React.FC<PsychAssessmentProps> = ({ assessment, className
     )}>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">{state}</h3>
+          <h3 className="text-xl font-semibold text-gray-900">{emotionalState}</h3>
           <p className="text-sm text-gray-500">AI-assisted assessment</p>
         </div>
-        <div className={cn("text-md font-medium", getConfidenceColor())}>
-          {confidence}% confidence
+        <div className={cn("text-md font-medium", getRiskLevelColor())}>
+          Risk Level: {riskLevel.toUpperCase()}
         </div>
       </div>
       
       <div className="mb-4">
-        <div className="flex flex-wrap gap-2 mt-2">
-          {tags.map((tag, index) => (
-            <Badge key={index} variant="secondary" className="bg-mind-softgray text-gray-700 border border-gray-300">
-              {tag}
-            </Badge>
+        <h4 className="text-sm font-medium text-gray-900 mb-2">Recommendations</h4>
+        <ul className="list-disc list-inside space-y-1">
+          {recommendations.map((rec, index) => (
+            <li key={index} className="text-sm text-gray-600">{rec}</li>
           ))}
-        </div>
+        </ul>
       </div>
       
-      {recommendation && (
-        <div className="mt-4 pt-3 border-t border-gray-200">
-          <h4 className="text-sm font-medium text-gray-900 mb-1">Recommendation</h4>
-          <p className="text-sm text-gray-600 bg-white p-3 rounded-md border border-gray-100">{recommendation}</p>
-        </div>
-      )}
+      <div className="mt-4 pt-3 border-t border-gray-200">
+        <h4 className="text-sm font-medium text-gray-900 mb-2">Key Insights</h4>
+        <ul className="list-disc list-inside space-y-1">
+          {insights.map((insight, index) => (
+            <li key={index} className="text-sm text-gray-600">{insight}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
