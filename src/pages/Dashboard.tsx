@@ -5,6 +5,7 @@ import MobileNav from '@/components/MobileNav';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { toast } from "@/components/ui/use-toast";
 import { groqService } from '@/utils/groqService';
+import { Loader2 } from 'lucide-react';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const DashboardPage = () => {
   const [sessionType, setSessionType] = useState<'normal' | 'gaming'>('normal');
   const [patientName, setPatientName] = useState<string>('');
   const [sessionStartTime] = useState(new Date());
+  const [isEndingSession, setIsEndingSession] = useState(false);
   
   useEffect(() => {
     // Retrieve session data from storage
@@ -28,6 +30,7 @@ const DashboardPage = () => {
   }, []);
   
   const handleEndSession = async () => {
+    setIsEndingSession(true);
     try {
       // Get all historical data from localStorage
       const assessmentHistory = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
@@ -82,6 +85,8 @@ const DashboardPage = () => {
         description: "There was an error generating the report. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsEndingSession(false);
     }
   };
 
@@ -96,6 +101,7 @@ const DashboardPage = () => {
           onEndSession={handleEndSession}
           onSectionChange={handleSectionChange}
           activeSection={activeSection}
+          endSessionLoading={isEndingSession}
         />
       </div>
       
@@ -105,6 +111,7 @@ const DashboardPage = () => {
             onEndSession={handleEndSession}
             onSectionChange={handleSectionChange}
             activeSection={activeSection}
+            endSessionLoading={isEndingSession}
           />
           <h1 className="text-xl font-bold">
             Mind State Navigator 

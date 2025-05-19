@@ -1,16 +1,16 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu, LogOut, Camera } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, Menu, LogOut, Camera, Loader2 } from "lucide-react";
 
 interface MobileNavProps {
   onEndSession?: () => void;
   onSectionChange: (section: string) => void;
   activeSection: string;
+  endSessionLoading?: boolean;
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ onEndSession, onSectionChange, activeSection }) => {
+const MobileNav: React.FC<MobileNavProps> = ({ onEndSession, onSectionChange, activeSection, endSessionLoading }) => {
   const [open, setOpen] = useState(false);
   
   const navItems = [
@@ -79,9 +79,10 @@ const MobileNav: React.FC<MobileNavProps> = ({ onEndSession, onSectionChange, ac
               variant="destructive" 
               className="w-full gap-2"
               onClick={handleEndSession}
+              disabled={endSessionLoading}
             >
-              <LogOut size={16} />
-              End Session
+              {endSessionLoading ? <Loader2 className="animate-spin" size={16} /> : <LogOut size={16} />}
+              {endSessionLoading ? 'Ending Session...' : 'End Session'}
             </Button>
           </div>
         </SheetContent>

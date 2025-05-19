@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
-import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, LogOut, Camera } from "lucide-react";
+import { Brain, HeartPulse, AudioWaveform, MessageSquare, ChartLine, Activity, LogOut, Camera, Loader2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 interface SidebarItemProps {
@@ -16,6 +15,7 @@ interface SidebarProps {
   onEndSession?: () => void;
   onSectionChange: (section: string) => void;
   activeSection: string;
+  endSessionLoading?: boolean;
 }
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick }) => {
@@ -34,7 +34,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick 
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ onEndSession, onSectionChange, activeSection }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onEndSession, onSectionChange, activeSection, endSessionLoading }) => {
   const navigate = useNavigate();
 
   const sidebarItems = [
@@ -81,9 +81,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onEndSession, onSectionChange, active
           variant="destructive" 
           className="w-full gap-2"
           onClick={onEndSession}
+          disabled={endSessionLoading}
         >
-          <LogOut size={16} />
-          End Session
+          {endSessionLoading ? <Loader2 className="animate-spin" size={16} /> : <LogOut size={16} />}
+          {endSessionLoading ? 'Ending Session...' : 'End Session'}
         </Button>
       </div>
     </aside>

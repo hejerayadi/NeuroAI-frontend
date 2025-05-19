@@ -14,7 +14,7 @@ const FacialAnalysisPage: React.FC<FacialAnalysisPageProps> = ({ patientName }) 
   const [facialEmotionType, setFacialEmotionType] = useState<'neutral' | 'positive' | 'negative' | 'warning'>(
     mapEmotionToType(facialEmotion)
   );
-  const [cameraActive, setCameraActive] = useState(true);
+  const [cameraActive, setCameraActive] = useState(false);
   const [emotionHistory, setEmotionHistory] = useState<FacialEmotionEntry[]>([]);
   
   // Clear localStorage on initial load if needed

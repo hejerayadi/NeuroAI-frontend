@@ -144,8 +144,11 @@ const Reports = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="rounded-lg shadow-lg p-6 bg-Sidebar-foreground">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <div className="rounded-lg shadow-lg ">
+        <div className='bg-mind-purple rounded-t-lg p-4 mb-4'>
+          <h1 className='text-white text-2xl font-bold'>Therapy Session Report</h1>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 px-6 gap-8 mb-8">
           {/* Left: Patient Info */}
           <div className="bg-mind-softgray border-x-4 border-mind-darkpurple shadow-md p-6 rounded-lg flex flex-col justify-between">
             <div>
@@ -170,29 +173,29 @@ const Reports = () => {
           </div>
         </div>
         {/* Center: What's in the report? */}
-        <div className="mb-10">
+        <div className="mb-10 px-6">
           <h2 className="text-xl font-bold mb-4">What's in the report?</h2>
           <ol className="space-y-3 ml-2">
             <li className="flex items-center">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-darkpurple text-white font-bold mr-3">1</span>
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-purple text-white font-bold mr-3">1</span>
               <span>Complete ECG and EEG data analysis with timestamps</span>
             </li>
             <li className="flex items-center">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-darkpurple text-white font-bold mr-3">2</span>
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-purple text-white font-bold mr-3">2</span>
               <span>Emotional state patterns and transitions</span>
             </li>
             <li className="flex items-center">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-darkpurple text-white font-bold mr-3">3</span>
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-purple text-white font-bold mr-3">3</span>
               <span>Brain wave speech interpretation logs</span>
             </li>
             <li className="flex items-center">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-darkpurple text-white font-bold mr-3">4</span>
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-mind-purple text-white font-bold mr-3">4</span>
               <span>AI-assisted psychological assessment</span>
             </li>
           </ol>
         </div>
         {/* Bottom: Buttons */}
-        <div className="flex flex-col md:flex-row justify-center md:justify-end gap-4 mt-8">
+        <div className="flex flex-col md:flex-row justify-center md:justify-center gap-4 mt-8 pb-6 px-6">
           <Button
             onClick={downloadPDF}
             className="bg-mind-darkpurple hover:bg-mind-purple px-8 py-3"

@@ -70,7 +70,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [textConfidence, setTextConfidence] = useState(85);
-  const [cameraActive, setCameraActive] = useState(true);
+  const [cameraActive, setCameraActive] = useState(false);
   const [eegEmotionHistory, setEegEmotionHistory] = useState<EegEmotionEntry[]>([]);
   
   // Historical emotion data
@@ -587,9 +587,11 @@ const Dashboard: React.FC<DashboardProps> = ({
               No EEG history available yet. Start the session to begin capturing data.
             </div>
           ) : (
-            <EmotionHistory
-              emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
-            />
+            <div className="max-h-96 overflow-y-auto">
+              <EmotionHistory
+                emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
+              />
+            </div>
           )}
         </div>
       </PatientCard>
