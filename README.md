@@ -1,7 +1,28 @@
 # NeuroAI Dashboard
 
-> A Next.js/Vite dashboard that connects to the [NeuroAI Backend](https://github.com/BassemBG/NeuroAI-Backend) every 5 seconds to retrieve and display the predicted emotions from various multi-modal sources.  
-> Developed as part of **ESE.INFIA0010 — AI Project** at **Esprit School of Engineering**.
+A Next.js/Vite dashboard that connects to the [NeuroAI Backend](https://github.com/BassemBG/NeuroAI-Backend) every 5 seconds to retrieve and display the predicted emotions from various multi-modal sources.  
+Developed as part of **ESE.INFIA0010 — AI Project** at **Esprit School of Engineering**.
+
+## 💻 UI Screenshots
+
+<table>
+  <tr>
+    <td>
+      <strong>🏠 Home Screen</strong><br/>
+      <img src="./public/neuro-ai-homepage.png" alt="Home Screen" width="500"/>
+    </td>
+    <td rowspan="2">
+      <strong>🧑‍⚕️ Psychiatrist Dashboard</strong><br/>
+      <img src="./public/neuro-ai-dashboard.png" alt="Psychiatrist Dashboard" width="600"/>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <strong>🧑‍💬 Patient Portal Agent</strong><br/>
+      <img src="./public/neuro-ai-patient-portal.png" alt="Patient Portal Agent" width="500"/>
+    </td>
+  </tr>
+</table>
 
 ## Overview
 This project is the frontend dashboard for the NeuroAI platform, a multi-modal approach to help psychiatrists diagnose patients. The dashboard provides a user interface for patients and psychiatrists to interact with the NeuroAI platform.
