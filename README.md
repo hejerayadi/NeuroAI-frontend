@@ -1,73 +1,66 @@
-# Welcome to your Lovable project
+# NeuroAI Dashboard
 
-## Project info
+> A Next.js/Vite dashboard that connects to the [NeuroAI Backend](https://github.com/BassemBG/NeuroAI-Backend) every 5 seconds to retrieve and display the predicted emotions from various multi-modal sources.  
+> Developed as part of **ESE.INFIA0010 — AI Project** at **Esprit School of Engineering**.
 
-**URL**: https://lovable.dev/projects/fdde8496-3cdb-444a-b9fe-b965c686df75
+## Overview
+This project is the frontend dashboard for the NeuroAI platform, a multi-modal approach to help psychiatrists diagnose patients. The dashboard provides a user interface for patients and psychiatrists to interact with the NeuroAI platform.
 
-## How can I edit this code?
+## Features
+- Patient and psychiatrist portals
+- Multi-modal approach to emotion recognition
+- Real-time emotion recognition and analysis (5-second intervals) for:
+  - 🧠 EEG Inner Subconscious state & 👁️ EOG Eye Movement Emotion  
+  - 🧠 Brain-to-text interpretation using EEG signals
+  - 🧠 EEG duringgaming activity (stimulated)
+  - ❤️ ECG-Based Emotion  
+  - 👤 Facial Expression Analysis  
+  - 🎤 Speech Tone Sentiment  
+- Historical interpretations and predicted emotions timeline with offline persistence (LocalStorage). 
+- AI assessments via Groq LLM to support the psychiatrist along his session.
+- LangChain/ LangFlow agent that analyzes tone and facial expressions from the patient's side in real-time, enabling self-assessment via a dedicated patient portal.
+- Responsive UI built with ShadCN + TailwindCSS
 
-There are several ways of editing your application.
 
-**Use Lovable**
+## Tech Stack
+- **Frameworks**: Next.js, Vite, React
+- **Styling**: TailwindCSS, ShadCN UI  
+- **State & Storage**: React Hooks, LocalStorage API  
+- **AI Agent**: Groq LLM, LangChain, LangFlow, Prompt Engineering.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fdde8496-3cdb-444a-b9fe-b965c686df75) and start prompting.
+## Directory Structure
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+root/
+│
+├── src/
+│ ├── components/
+│ ├── hooks/
+│ ├── lib/
+│ ├── pages/
+│ └── utils/
+│
+└── README.md
 ```
 
-**Edit a file directly in GitHub**
+## Getting Started
+1. Clone the repository.
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Usage
+The dashboard provides a user interface for patients and psychiatrists to interact with the NeuroAI platform.
 
-**Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Acknowledgments
+This project was developed as part of the coursework for AI project (ESE.INFIA0010) at Esprit School of Engineering.
 
-## What technologies are used for this project?
+Special thanks to
 
-This project is built with:
+- **Prof. Sonia Mesbeh** (sonia.mesbeh@esprit.tn)
+- **Prof. Jihene Hlel** (jihene.hlel@esprit.tn)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+for their invaluable guidance from ideation and model training through to system architecture and deployment.
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/fdde8496-3cdb-444a-b9fe-b965c686df75) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Topics
+web-development, nextjs, react, vite, tailwindcss, artificial-intelligence, ai-agent, emotion-recognition, langchain, frontend, eeg, eog, ecg, speech-analysis, ai-healthcare, esprit-school-of-engineering
