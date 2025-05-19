@@ -32,13 +32,15 @@ interface DashboardProps {
   sessionType?: 'normal' | 'gaming';
   patientName?: string;
   doctorName?: string;
+  sessionStartTime: Date;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   activeSection = "dashboard",
   sessionType = 'normal',
   patientName = '',
-  doctorName = ''
+  doctorName = '',
+  sessionStartTime
 }) => {
   const navigate = useNavigate();
 
@@ -134,7 +136,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isGeneratingAssessment, setIsGeneratingAssessment] = useState(false);
 
   // Add session start time
-  const [sessionStartTime] = useState(new Date());
   const [sessionDuration, setSessionDuration] = useState('00:00:00');
 
   // Get patient data with the provided name if available
@@ -307,6 +308,32 @@ const Dashboard: React.FC<DashboardProps> = ({
     localStorage.removeItem('eegHistory');
     localStorage.removeItem('speechHistory');
     localStorage.removeItem('brainWaveHistory');
+    localStorage.removeItem('facialEmotionHistory');
+    
+    // Clear all state variables
+    setEcgHistory([]);
+    setEegHistory([]);
+    setSpeechHistory([]);
+    setBrainWaveHistory([]);
+    setSpeechEmotionHistory([]);
+    setEegEmotionHistory([]);
+    setAssessmentHistory([]);
+    
+    // Reset current emotions to neutral
+    setEcgEmotion('neutral');
+    setEegEmotion('neutral');
+    setFacialEmotion('neutral');
+    setFacialEmotionType('neutral');
+    setSpeechEmotion('neutral');
+    setSpeechEmotionType('neutral');
+    
+    // Reset assessment to initial state
+    setAssessment({
+      emotionalState: 'Initializing assessment...',
+      recommendations: ['Waiting for data to generate recommendations...'],
+      riskLevel: 'low',
+      insights: ['Waiting for data to generate insights...']
+    });
     
     // Navigate to session start
     navigate('/session-start');
