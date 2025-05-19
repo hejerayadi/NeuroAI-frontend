@@ -8,6 +8,8 @@ import BrainWaveText from '../visualizations/BrainWaveText';
 import PsychAssessment from '../visualizations/PsychAssessment';
 import FacialExpression from '../visualizations/FacialExpression';
 import ToneAnalysis, { SpeechEmotionEntry } from '../visualizations/ToneAnalysis';
+import EegEmotionMonitor, { EegEmotionEntry } from '../visualizations/EegEmotionMonitor';
+import EnhancedEegVisualization from '../visualizations/EnhancedEegVisualization';
 import FacialAnalysisPage from './FacialAnalysisPage';
 import { format } from 'date-fns';
 import { 
@@ -21,6 +23,8 @@ import {
   mapEmotionToType,
   getPatientData
 } from '@/utils/dummyData';
+import { groqService } from '@/utils/groqService';
+import { Button } from '@/components/ui/button';
 
 interface DashboardProps {
   activeSection?: string;
@@ -46,56 +50,83 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [speechEmotionType, setSpeechEmotionType] = useState<'neutral' | 'positive' | 'negative' | 'warning'>('neutral');
   const [speechEmotionHistory, setSpeechEmotionHistory] = useState<SpeechEmotionEntry[]>([]);
   const [brainWaveText, setBrainWaveText] = useState(getRandomBrainWaveText());
-  const [assessment, setAssessment] = useState(getRandomAssessment());
+  const [assessment, setAssessment] = useState<{
+    emotionalState: string;
+    recommendations: string[];
+    riskLevel: 'low' | 'medium' | 'high';
+    insights: string[];
+  }>({
+    emotionalState: 'Initializing assessment...',
+    recommendations: ['Waiting for data to generate recommendations...'],
+    riskLevel: 'low',
+    insights: ['Waiting for data to generate insights...']
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [textConfidence, setTextConfidence] = useState(85);
   const [cameraActive, setCameraActive] = useState(true);
+  const [eegEmotionHistory, setEegEmotionHistory] = useState<EegEmotionEntry[]>([]);
   
   // Historical emotion data
-  const [ecgHistory, setEcgHistory] = useState([
-    { time: format(new Date(Date.now() - 30 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
-    { time: format(new Date(Date.now() - 25 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
-    { time: format(new Date(Date.now() - 15 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
-    { time: format(new Date(Date.now() - 7 * 60000), 'HH:mm'), emotion: getRandomEmotion('ecg') },
+  const [ecgHistory, setEcgHistory] = useState<Array<{
+    time: string;
+    emotion: string;
+    source: string;
+    type?: 'neutral' | 'positive' | 'negative' | 'warning';
+  }>>([]);
+  
+  const [eegHistory, setEegHistory] = useState<Array<{
+    time: string;
+    emotion: string;
+    source: string;
+    type?: 'neutral' | 'positive' | 'negative' | 'warning';
+  }>>([]);
+  
+  const [speechHistory, setSpeechHistory] = useState<Array<{
+    time: string;
+    emotion: string;
+    source: string;
+    type?: 'neutral' | 'positive' | 'negative' | 'warning';
+  }>>([
+    { time: format(new Date(Date.now() - 29 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech'), source: 'Speech' },
+    { time: format(new Date(Date.now() - 22 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech'), source: 'Speech' },
+    { time: format(new Date(Date.now() - 17 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech'), source: 'Speech' },
+    { time: format(new Date(Date.now() - 10 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech'), source: 'Speech' },
+    { time: format(new Date(Date.now() - 3 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech'), source: 'Speech' },
   ]);
   
-  const [eegHistory, setEegHistory] = useState([
-    { time: format(new Date(Date.now() - 28 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
-    { time: format(new Date(Date.now() - 21 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
-    { time: format(new Date(Date.now() - 14 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
-    { time: format(new Date(Date.now() - 5 * 60000), 'HH:mm'), emotion: getRandomEmotion('eeg') },
-  ]);
-  
-  const [speechHistory, setSpeechHistory] = useState([
-    { time: format(new Date(Date.now() - 29 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
-    { time: format(new Date(Date.now() - 22 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
-    { time: format(new Date(Date.now() - 17 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
-    { time: format(new Date(Date.now() - 10 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
-    { time: format(new Date(Date.now() - 3 * 60000), 'HH:mm'), emotion: getRandomEmotion('speech') },
-  ]);
-  
-  const [brainWaveHistory, setBrainWaveHistory] = useState([
+  const [brainWaveHistory, setBrainWaveHistory] = useState<Array<{
+    time: string;
+    text: string;
+    confidence: number;
+  }>>([
     { 
       time: format(new Date(Date.now() - 27 * 60000), 'HH:mm'), 
-      emotion: "Focused", 
-      text: getRandomBrainWaveText() 
+      text: getRandomBrainWaveText(),
+      confidence: 85
     },
     { 
       time: format(new Date(Date.now() - 20 * 60000), 'HH:mm'), 
-      emotion: "Relaxed", 
-      text: getRandomBrainWaveText() 
+      text: getRandomBrainWaveText(),
+      confidence: 78
     },
     { 
       time: format(new Date(Date.now() - 13 * 60000), 'HH:mm'), 
-      emotion: "Anxious", 
-      text: getRandomBrainWaveText() 
+      text: getRandomBrainWaveText(),
+      confidence: 92
     },
     { 
       time: format(new Date(Date.now() - 6 * 60000), 'HH:mm'), 
-      emotion: "Calm", 
-      text: getRandomBrainWaveText() 
+      text: getRandomBrainWaveText(),
+      confidence: 81
     },
   ]);
+
+  const [assessmentHistory, setAssessmentHistory] = useState<Array<{
+    timestamp: string;
+    assessment: typeof assessment;
+  }>>([]);
+
+  const [isGeneratingAssessment, setIsGeneratingAssessment] = useState(false);
 
   // Get patient data with the provided name if available
   const patient = patientName ? 
@@ -119,6 +150,52 @@ const Dashboard: React.FC<DashboardProps> = ({
   const handleSpeechHistoryUpdate = (history: SpeechEmotionEntry[]) => {
     console.log(`Speech history update received with ${history.length} entries`);
     setSpeechEmotionHistory(history);
+  };
+
+  // Handle EEG emotion updates from EegEmotionMonitor component
+  const handleEegEmotionUpdate = (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => {
+    setEegEmotion(emotion);
+    console.log(`Dashboard received EEG emotion update: ${emotion} (${emotionType})`);
+    
+    // Add the new emotion to history
+    const now = new Date();
+    const formattedTime = format(now, 'HH:mm:ss');
+    
+    // Update eegHistory with new entry
+    setEegHistory(prevHistory => {
+      const newEntry = { 
+        time: formattedTime, 
+        emotion: emotion,
+        source: 'EEG',
+        type: emotionType
+      };
+      
+      // Add to beginning of history array (newest first) and limit to 50 entries
+      const updatedHistory = [newEntry, ...prevHistory].slice(0, 50);
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('eegEmotionHistory', JSON.stringify(updatedHistory));
+      } catch (error) {
+        console.error("Error saving EEG history to localStorage:", error);
+      }
+      
+      return updatedHistory;
+    });
+  };
+
+  // Handle EEG history updates
+  const handleEegHistoryUpdate = (history: EegEmotionEntry[]) => {
+    console.log(`EEG history update received with ${history.length} entries`);
+    setEegEmotionHistory(history);
+    
+    // Update the eegHistory format for compatibility with existing components
+    setEegHistory(history.map(entry => ({
+      time: entry.formattedTime,
+      emotion: entry.emotion,
+      source: 'EEG',
+      type: entry.emotionType
+    })));
   };
 
   // Simulate real-time data updates
@@ -161,10 +238,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
     }, 1000);
 
-    // Emotion updates at a slower rate - REMOVING facial and speech emotion random updates
+    // Emotion updates at a slower rate - REMOVING facial, speech AND eeg emotion random updates
     const emotionInterval = setInterval(() => {
       if (Math.random() > 0.7) setEcgEmotion(getRandomEmotion('ecg'));
-      if (Math.random() > 0.7) setEegEmotion(getRandomEmotion('eeg'));
+      // EEG emotion is now controlled by the API
       // Facial emotion is now controlled by the API
       // Speech emotion is now controlled by the API
     }, 5000);
@@ -179,16 +256,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       }, 2000);
     }, 10000);
 
-    // Simulate assessment updates
-    const assessmentInterval = setInterval(() => {
-      setAssessment(getRandomAssessment());
-    }, 15000);
-
     return () => {
       clearInterval(updateInterval);
       clearInterval(emotionInterval);
       clearInterval(textInterval);
-      clearInterval(assessmentInterval);
     };
   }, []);
 
@@ -201,168 +272,258 @@ const Dashboard: React.FC<DashboardProps> = ({
     console.log("Dashboard initialized");
   }, []);
 
+  // Update assessment using Groq service
+  const updateAssessment = async () => {
+    try {
+      setIsGeneratingAssessment(true);
+      const assessment = await groqService.getPsychologicalAssessment(
+        ecgHistory,
+        eegHistory,
+        speechHistory,
+        brainWaveHistory
+      );
+      setAssessment(assessment);
+      
+      // Add to history
+      const timestamp = new Date().toISOString();
+      setAssessmentHistory(prev => [{
+        timestamp,
+        assessment
+      }, ...prev].slice(0, 10)); // Keep last 10 assessments
+      
+      // Save to localStorage
+      try {
+        const savedHistory = localStorage.getItem('assessmentHistory');
+        let historyArray = [];
+        
+        if (savedHistory) {
+          historyArray = JSON.parse(savedHistory);
+        }
+        
+        const updatedHistory = [{
+          timestamp,
+          assessment
+        }, ...historyArray].slice(0, 10);
+        
+        localStorage.setItem('assessmentHistory', JSON.stringify(updatedHistory));
+      } catch (error) {
+        console.error("Error saving assessment history to localStorage:", error);
+      }
+    } catch (error) {
+      console.error('Error updating assessment:', error);
+      // Fallback to dummy data if there's an error
+      setAssessment(getRandomAssessment());
+    } finally {
+      setIsGeneratingAssessment(false);
+    }
+  };
+
+  // Load assessment history from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('assessmentHistory');
+      if (savedHistory) {
+        setAssessmentHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error("Error loading assessment history from localStorage:", error);
+    }
+  }, []);
+
+  // Initial assessment
+  useEffect(() => {
+    setAssessment(getRandomAssessment());
+  }, []);
+
   // Render function for the main dashboard
   const renderDashboard = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {/* ECG Chart */}
-      <PatientCard 
-        title="ECG Heart Monitor" 
-        description="Real-time heartbeat analysis"
-        className="md:col-span-1"
-      >
-        <div className="h-64">
-          <SimpleLineChart 
-            data={ecgData} 
-            dataKey="value" 
-            color="#ef4444" 
-            height={230}
-          />
-        </div>
-        <div className="mt-4 flex justify-center">
-          <EmotionTag 
-            emotion={ecgEmotion} 
-            type={mapEmotionToType(ecgEmotion)} 
-            source="ECG" 
-            pulsing={true}
-          />
-        </div>
-      </PatientCard>
-
-      {/* EEG Chart */}
-      <PatientCard 
-        title="EEG Brain Activity" 
-        description="Real-time brain wave patterns"
-        className="md:col-span-1"
-      >
-        <div className="h-64">
-          <SimpleLineChart 
-            data={eegData} 
-            dataKey="value" 
-            color="#9b87f5" 
-            height={230}
-          />
-        </div>
-        <div className="mt-4 flex justify-center">
-          <EmotionTag 
-            emotion={eegEmotion} 
-            type={mapEmotionToType(eegEmotion)} 
-            source="EEG" 
-            pulsing={true}
-          />
-        </div>
-      </PatientCard>
-
-      {/* Show EOG Chart only for normal sessions */}
-      {sessionType === 'normal' && (
+    <div className="grid grid-cols-12 gap-6">
+      {/* Left Column - Stacked Components */}
+      <div className="col-span-12 md:col-span-5 space-y-6">
+        {/* ECG Chart */}
         <PatientCard 
-          title="EOG Eye Movement" 
-          description="Real-time eye activity tracking"
-          className="md:col-span-1"
+          title="ECG Heart Monitor" 
+          description="Real-time heartbeat analysis"
         >
           <div className="h-64">
             <SimpleLineChart 
-              data={eogData} 
+              data={ecgData} 
               dataKey="value" 
-              color="#3b82f6" 
+              color="#ef4444" 
               height={230}
             />
           </div>
           <div className="mt-4 flex justify-center">
             <EmotionTag 
-              emotion={eegEmotion} 
-              type={mapEmotionToType(eegEmotion)} 
-              source="EEG/EOG" 
+              emotion={ecgEmotion} 
+              type={mapEmotionToType(ecgEmotion)} 
+              source="ECG" 
               pulsing={true}
             />
           </div>
         </PatientCard>
-      )}
 
-      {/* Facial Expression Analysis */}
-      <PatientCard 
-        title="Facial Expression Analysis" 
-        description="Real-time facial emotion detection"
-        className="md:col-span-1"
-      >
-        <FacialExpression 
-          cameraActive={cameraActive}
-          onCameraToggle={(active) => setCameraActive(active)}
-          onEmotionUpdate={handleFacialEmotionUpdate}
-        />
-      </PatientCard>
-
-      {/* Tone Analysis */}
-      <PatientCard 
-        title="Speech Tone Analysis" 
-        description="Real-time voice tone detection"
-        className="md:col-span-1"
-      >
-        <ToneAnalysis 
-          emotion={speechEmotion}
-          emotionType={speechEmotionType}
-          onEmotionUpdate={handleSpeechEmotionUpdate}
-          onHistoryUpdate={handleSpeechHistoryUpdate}
-        />
-      </PatientCard>
-
-      {/* Brain Wave Text Interpretation */}
-      <PatientCard 
-        title="Brain Wave Speech Interpretation" 
-        description="Detected thoughts from brain patterns"
-        className="md:col-span-1"
-      >
-        <BrainWaveText 
-          text={brainWaveText} 
-          isProcessing={isProcessing}
-          confidence={textConfidence}
-        />
-      </PatientCard>
-
-      {/* Emotional State Analysis */}
-      <PatientCard 
-        title="Emotional State Analysis" 
-        description="Multi-source emotion detection"
-        className="md:col-span-2 lg:col-span-2"
-      >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-          <EmotionTag 
-            emotion={ecgEmotion} 
-            type={mapEmotionToType(ecgEmotion)} 
-            source="ECG" 
-            pulsing={true}
+        {/* Facial Expression Analysis */}
+        <PatientCard 
+          title="Facial Expression Analysis" 
+          description="Real-time facial emotion detection"
+        >
+          <FacialExpression 
+            cameraActive={cameraActive}
+            onCameraToggle={(active) => setCameraActive(active)}
+            onEmotionUpdate={handleFacialEmotionUpdate}
           />
-          <EmotionTag 
-            emotion={eegEmotion} 
-            type={mapEmotionToType(eegEmotion)} 
-            source="EEG" 
-            pulsing={true}
-          />
-          <EmotionTag 
-            emotion={facialEmotion} 
-            type={facialEmotionType} 
-            source="Facial" 
-            pulsing={true}
-          />
-          <EmotionTag 
-            emotion={speechEmotion} 
-            type={speechEmotionType} 
-            source="Speech" 
-            pulsing={true}
-          />
-        </div>
-      </PatientCard>
+        </PatientCard>
 
-      {/* Psychological Assessment */}
-      <PatientCard 
-        title="AI Psychological Assessment" 
-        description="Analysis from combined data sources"
-        className="md:col-span-2 lg:col-span-1"
-      >
-        <PsychAssessment 
-          assessment={assessment} 
-          className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
-        />
-      </PatientCard>
+        {/* Tone Analysis */}
+        <PatientCard 
+          title="Speech Tone Analysis" 
+          description="Real-time voice tone detection"
+        >
+          <ToneAnalysis 
+            emotion={speechEmotion}
+            emotionType={speechEmotionType}
+            onEmotionUpdate={handleSpeechEmotionUpdate}
+            onHistoryUpdate={handleSpeechHistoryUpdate}
+          />
+        </PatientCard>
+      </div>
+
+      {/* Right Column - EEG Brain Activity */}
+      <div className="col-span-12 md:col-span-7">
+        {/* EEG Chart */}
+        <PatientCard 
+          title="EEG Brain Activity" 
+          description="Real-time brain wave patterns"
+        >
+          <EnhancedEegVisualization
+            emotion={eegEmotion}
+            emotionType={mapEmotionToType(eegEmotion)}
+            showEog={true}
+            onEmotionUpdate={handleEegEmotionUpdate}
+          />
+        </PatientCard>
+      </div>
+
+      {/* Middle Row - Brain Wave Text and Emotional State Analysis side by side */}
+      <div className="col-span-12 md:col-span-6">
+        {/* Brain Wave Text Interpretation */}
+        <PatientCard 
+          title="Brain Wave Speech Interpretation" 
+          description="Detected thoughts from brain patterns"
+        >
+          <BrainWaveText 
+            text={brainWaveText} 
+            isProcessing={isProcessing}
+            confidence={textConfidence}
+          />
+        </PatientCard>
+      </div>
+
+      <div className="col-span-12 md:col-span-6">
+        {/* Emotional State Analysis */}
+        <PatientCard 
+          title="Emotional State Analysis" 
+          description="Multi-source emotion detection"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+            <EmotionTag 
+              emotion={ecgEmotion} 
+              type={mapEmotionToType(ecgEmotion)} 
+              source="ECG" 
+              pulsing={true}
+            />
+            <EmotionTag 
+              emotion={eegEmotion} 
+              type={mapEmotionToType(eegEmotion)} 
+              source="EEG" 
+              pulsing={true}
+            />
+            <EmotionTag 
+              emotion={facialEmotion} 
+              type={facialEmotionType} 
+              source="Facial" 
+              pulsing={true}
+            />
+            <EmotionTag 
+              emotion={speechEmotion} 
+              type={speechEmotionType} 
+              source="Speech" 
+              pulsing={true}
+            />
+          </div>
+        </PatientCard>
+      </div>
+
+      {/* Bottom Row - Psychological Assessment */}
+      <div className="col-span-12">
+        {/* Psychological Assessment */}
+        <PatientCard 
+          title="AI Psychological Assessment" 
+          description="Analysis from combined data sources"
+        >
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={updateAssessment}
+              disabled={isGeneratingAssessment}
+              className="bg-mind-darkpurple hover:bg-mind-purple"
+            >
+              {isGeneratingAssessment ? 'Generating...' : 'Generate New Assessment'}
+            </Button>
+          </div>
+
+          <PsychAssessment 
+            assessment={assessment} 
+            className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md p-6" 
+          />
+
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <EmotionTag 
+              emotion={ecgEmotion} 
+              type={mapEmotionToType(ecgEmotion)} 
+              source="ECG" 
+              pulsing={true}
+            />
+            <EmotionTag 
+              emotion={eegEmotion} 
+              type={mapEmotionToType(eegEmotion)} 
+              source="EEG" 
+              pulsing={true}
+            />
+            <EmotionTag 
+              emotion={facialEmotion} 
+              type={facialEmotionType} 
+              source="Facial" 
+              pulsing={true}
+            />
+            <EmotionTag 
+              emotion={speechEmotion} 
+              type={speechEmotionType} 
+              source="Speech" 
+              pulsing={true}
+            />
+          </div>
+          
+          <div className="mt-8 border-t pt-4">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Assessment History</h3>
+            <div className="space-y-4">
+              {assessmentHistory.map((entry, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg shadow">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-sm text-gray-500">
+                      {format(new Date(entry.timestamp), 'MMM d, yyyy HH:mm:ss')}
+                    </span>
+                  </div>
+                  <PsychAssessment 
+                    assessment={entry.assessment} 
+                    className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </PatientCard>
+      </div>
     </div>
   );
 
@@ -376,59 +537,20 @@ const Dashboard: React.FC<DashboardProps> = ({
           "Real-time brain wave patterns"}
         className="col-span-1"
       >
-        <div className="h-[400px]">
-          <SimpleLineChart 
-            data={eegData} 
-            dataKey="value" 
-            color="#9b87f5" 
-            height={350}
-          />
-        </div>
-        <div className="mt-6 flex justify-center">
-          <div className="flex flex-col items-center">
-            <h3 className="text-xl font-semibold mb-4">Current Emotional State</h3>
-            <EmotionTag 
-              emotion={eegEmotion} 
-              type={mapEmotionToType(eegEmotion)} 
-              source="EEG" 
-              pulsing={true}
-              className="transform scale-125"
-            />
-          </div>
-        </div>
-
+        <EnhancedEegVisualization
+          emotion={eegEmotion}
+          emotionType={mapEmotionToType(eegEmotion)}
+          showEog={true}
+          onEmotionUpdate={handleEegEmotionUpdate}
+          className="mt-4"
+        />
+        
         <div className="mt-8 border-t pt-4">
           <EmotionHistory
             emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
           />
         </div>
       </PatientCard>
-
-      {/* Show EOG only for normal sessions */}
-      {sessionType === 'normal' && (
-        <PatientCard 
-          title="EOG Eye Movement" 
-          description="Real-time eye activity tracking"
-          className="col-span-1"
-        >
-          <div className="h-[350px]">
-            <SimpleLineChart 
-              data={eogData} 
-              dataKey="value" 
-              color="#3b82f6" 
-              height={300}
-            />
-          </div>
-          <div className="mt-4 flex justify-center">
-            <EmotionTag 
-              emotion={eegEmotion} 
-              type={mapEmotionToType(eegEmotion)} 
-              source="EEG/EOG" 
-              pulsing={true}
-            />
-          </div>
-        </PatientCard>
-      )}
     </div>
   );
 
@@ -583,10 +705,21 @@ const Dashboard: React.FC<DashboardProps> = ({
         description="Comprehensive psychological analysis from combined data sources"
         className="col-span-1"
       >
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={updateAssessment}
+            disabled={isGeneratingAssessment}
+            className="bg-mind-darkpurple hover:bg-mind-purple"
+          >
+            {isGeneratingAssessment ? 'Generating...' : 'Generate New Assessment'}
+          </Button>
+        </div>
+
         <PsychAssessment 
           assessment={assessment} 
           className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md p-6" 
         />
+
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
           <EmotionTag 
             emotion={ecgEmotion} 
@@ -615,16 +748,21 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
         
         <div className="mt-8 border-t pt-4">
-          <h3 className="text-lg font-medium text-gray-800 mb-4">Emotion Progression</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <EmotionHistory
-              emotions={ecgHistory.map(item => ({ ...item, source: "ECG" }))}
-              className="mb-4"
-            />
-            <EmotionHistory
-              emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
-              className="mb-4"
-            />
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Assessment History</h3>
+          <div className="space-y-4">
+            {assessmentHistory.map((entry, index) => (
+              <div key={index} className="bg-white p-4 rounded-lg shadow">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-sm text-gray-500">
+                    {format(new Date(entry.timestamp), 'MMM d, yyyy HH:mm:ss')}
+                  </span>
+                </div>
+                <PsychAssessment 
+                  assessment={entry.assessment} 
+                  className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
+                />
+              </div>
+            ))}
           </div>
         </div>
       </PatientCard>

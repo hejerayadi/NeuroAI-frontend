@@ -124,42 +124,81 @@ export const getRandomBrainWaveText = () => {
 };
 
 // Assessment states
-export const assessmentStates = [
-  {
-    state: "Mild Anxiety Disorder",
-    confidence: 82,
-    tags: ["Anxiety", "Stress", "Sleep Issues"],
-    recommendation: "Consider cognitive behavioral therapy techniques and monitor stress triggers."
-  },
-  {
-    state: "Depression - Moderate",
-    confidence: 75,
-    tags: ["Depression", "Fatigue", "Low Motivation"],
-    recommendation: "Evaluate current medication effectiveness and consider adjustment after two weeks."
-  },
-  {
-    state: "ADHD - Primarily Inattentive",
-    confidence: 68,
-    tags: ["Attention Deficit", "Distraction", "Impulsivity"],
-    recommendation: "Structured environment strategies and potential medication review."
-  },
-  {
-    state: "Post-Traumatic Stress",
-    confidence: 87,
-    tags: ["Trauma", "Hypervigilance", "Flashbacks"],
-    recommendation: "Continue EMDR therapy sessions and practice grounding techniques."
-  },
-  {
-    state: "Generalized Anxiety",
-    confidence: 79,
-    tags: ["Worry", "Rumination", "Physical Tension"],
-    recommendation: "Mindfulness practice and evaluate efficacy of current anti-anxiety medication."
-  }
-];
-
-// Get a random assessment
 export const getRandomAssessment = () => {
-  return assessmentStates[Math.floor(Math.random() * assessmentStates.length)];
+  const assessments = [
+    {
+      emotionalState: "Mild anxiety with occasional stress responses",
+      recommendations: [
+        "Practice deep breathing exercises",
+        "Consider regular meditation sessions",
+        "Maintain consistent sleep schedule"
+      ],
+      riskLevel: "low" as const,
+      insights: [
+        "Elevated heart rate during stressful situations",
+        "Normal brain wave patterns during rest",
+        "Positive emotional baseline"
+      ]
+    },
+    {
+      emotionalState: "Moderate depression with anxiety symptoms",
+      recommendations: [
+        "Schedule regular therapy sessions",
+        "Implement daily exercise routine",
+        "Consider medication consultation"
+      ],
+      riskLevel: "medium" as const,
+      insights: [
+        "Consistent negative emotional patterns",
+        "Irregular sleep patterns detected",
+        "Reduced positive emotional responses"
+      ]
+    },
+    {
+      emotionalState: "ADHD symptoms with emotional dysregulation",
+      recommendations: [
+        "Implement structured daily routines",
+        "Practice mindfulness techniques",
+        "Consider cognitive behavioral therapy"
+      ],
+      riskLevel: "medium" as const,
+      insights: [
+        "Inconsistent attention patterns",
+        "Rapid emotional fluctuations",
+        "High energy levels during tasks"
+      ]
+    },
+    {
+      emotionalState: "PTSD symptoms with anxiety",
+      recommendations: [
+        "Seek trauma-focused therapy",
+        "Practice grounding techniques",
+        "Consider EMDR therapy"
+      ],
+      riskLevel: "high" as const,
+      insights: [
+        "Heightened stress responses",
+        "Sleep disturbances detected",
+        "Hypervigilance patterns"
+      ]
+    },
+    {
+      emotionalState: "Generalized anxiety with stress",
+      recommendations: [
+        "Regular exercise and physical activity",
+        "Practice progressive muscle relaxation",
+        "Consider anxiety management techniques"
+      ],
+      riskLevel: "medium" as const,
+      insights: [
+        "Elevated baseline anxiety",
+        "Stress response to daily triggers",
+        "Normal cognitive function"
+      ]
+    }
+  ];
+
+  return assessments[Math.floor(Math.random() * assessments.length)];
 };
 
 // Map emotions to types for styling
@@ -182,5 +221,55 @@ export const getPatientData = () => {
     sessionTime: "35:42",
     status: "active" as const,
     imageUrl: "",
+  };
+};
+
+// Add these functions to generate realistic EEG data for different wave types
+
+// Generate data for different EEG wave types with appropriate frequencies
+export const generateEegWaveData = (type: 'gamma' | 'beta' | 'alpha' | 'theta' | 'delta', points: number = 100) => {
+  // Define frequency ranges and amplitudes for each wave type
+  const waveProperties = {
+    gamma: { minFreq: 30, maxFreq: 80, amplitude: 0.5, noise: 0.2 },
+    beta: { minFreq: 13, maxFreq: 30, amplitude: 1, noise: 0.3 },
+    alpha: { minFreq: 8, maxFreq: 13, amplitude: 2, noise: 0.5 },
+    theta: { minFreq: 4, maxFreq: 8, amplitude: 2.5, noise: 0.7 },
+    delta: { minFreq: 0.5, maxFreq: 4, amplitude: 5, noise: 1 }
+  };
+
+  const properties = waveProperties[type];
+  const data = [];
+  
+  // Generate a primary frequency within the proper range for this wave type
+  const primaryFreq = properties.minFreq + Math.random() * (properties.maxFreq - properties.minFreq);
+  // Add a secondary frequency for more realistic patterns
+  const secondaryFreq = properties.minFreq + Math.random() * (properties.maxFreq - properties.minFreq);
+  
+  for (let i = 0; i < points; i++) {
+    // Create compound wave with primary and secondary frequencies
+    const primaryWave = Math.sin(i * primaryFreq * 0.01) * properties.amplitude;
+    const secondaryWave = Math.sin(i * secondaryFreq * 0.02) * (properties.amplitude * 0.4);
+    // Add some noise for realism
+    const noise = (Math.random() - 0.5) * properties.noise;
+    
+    const value = primaryWave + secondaryWave + noise;
+    
+    data.push({
+      time: `${i * 10}ms`, 
+      value: value
+    });
+  }
+  
+  return data;
+};
+
+// Generate all EEG wave types at once for synchronized charts
+export const generateAllEegWaves = (points: number = 100) => {
+  return {
+    gamma: generateEegWaveData('gamma', points),
+    beta: generateEegWaveData('beta', points),
+    alpha: generateEegWaveData('alpha', points),
+    theta: generateEegWaveData('theta', points),
+    delta: generateEegWaveData('delta', points)
   };
 };

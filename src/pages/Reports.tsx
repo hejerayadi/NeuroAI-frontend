@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,41 +17,59 @@ const Reports = () => {
   const patient = getPatientData();
   
   const downloadReport = () => {
-    // Generate dummy report data
     const reportData = {
-      patientName: sessionStorage.getItem('patientName') || patient.name,
-      patientId: patient.id,
-      sessionDate: new Date(),
-      ecgData: generateEcgData(30),
-      eegData: generateEegData(30),
+      patientData: {
+        name: "John Doe",
+        age: 35,
+        gender: "Male",
+        lastVisit: new Date().toISOString()
+      },
       emotionalStates: [
-        { time: format(new Date(Date.now() - 30 * 60000), 'HH:mm:ss'), emotion: getRandomEmotion('ecg'), source: 'ECG' },
-        { time: format(new Date(Date.now() - 25 * 60000), 'HH:mm:ss'), emotion: getRandomEmotion('eeg'), source: 'EEG' },
-        { time: format(new Date(Date.now() - 20 * 60000), 'HH:mm:ss'), emotion: getRandomEmotion('facial'), source: 'Facial' },
-        { time: format(new Date(Date.now() - 15 * 60000), 'HH:mm:ss'), emotion: getRandomEmotion('speech'), source: 'Speech' },
-        { time: format(new Date(Date.now() - 10 * 60000), 'HH:mm:ss'), emotion: getRandomEmotion('ecg'), source: 'ECG' },
-        { time: format(new Date(Date.now() - 5 * 60000), 'HH:mm:ss'), emotion: getRandomEmotion('eeg'), source: 'EEG' },
+        {
+          timestamp: new Date().toISOString(),
+          source: "ECG",
+          emotion: "Anxiety",
+          confidence: 0.85
+        },
+        {
+          timestamp: new Date().toISOString(),
+          source: "EEG",
+          emotion: "Stress",
+          confidence: 0.78
+        }
       ],
       brainWaveTexts: [
-        { time: format(new Date(Date.now() - 28 * 60000), 'HH:mm:ss'), text: getRandomBrainWaveText(), confidence: 88 },
-        { time: format(new Date(Date.now() - 21 * 60000), 'HH:mm:ss'), text: getRandomBrainWaveText(), confidence: 75 },
-        { time: format(new Date(Date.now() - 14 * 60000), 'HH:mm:ss'), text: getRandomBrainWaveText(), confidence: 92 },
-        { time: format(new Date(Date.now() - 7 * 60000), 'HH:mm:ss'), text: getRandomBrainWaveText(), confidence: 81 },
+        {
+          timestamp: new Date().toISOString(),
+          text: "Patient expressing concerns about work stress",
+          confidence: 0.92
+        }
       ],
-      psychAssessment: getRandomAssessment(),
+      psychAssessment: {
+        emotionalState: "Moderate anxiety with stress responses",
+        recommendations: [
+          "Practice stress management techniques",
+          "Consider therapy sessions",
+          "Maintain regular exercise routine"
+        ],
+        riskLevel: "medium",
+        insights: [
+          "Elevated stress levels during work hours",
+          "Normal sleep patterns",
+          "Positive response to relaxation techniques"
+        ]
+      }
     };
-    
-    // Generate PDF
-    const pdfBlob = generatePDFReport(reportData);
-    
-    // Create a download link
-    const url = window.URL.createObjectURL(pdfBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `MindState_Report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patient-report-${new Date().toISOString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
