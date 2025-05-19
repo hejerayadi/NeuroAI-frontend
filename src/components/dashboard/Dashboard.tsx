@@ -26,6 +26,8 @@ import {
 import { groqService } from '@/utils/groqService';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useRef } from 'react';
 
 interface DashboardProps {
   activeSection?: string;
@@ -256,20 +258,57 @@ const Dashboard: React.FC<DashboardProps> = ({
       // Speech emotion is now controlled by the API
     }, 5000);
 
-    // Simulate brain wave text processing
-    const textInterval = setInterval(() => {
-      setIsProcessing(true);
-      setTimeout(() => {
-        setBrainWaveText(getRandomBrainWaveText());
-        setTextConfidence(Math.round(60 + Math.random() * 35));
-        setIsProcessing(false);
-      }, 2000);
-    }, 10000);
+
+  // Brain wave text updates from the API
+  async function fetchAndDisplayPredictions() {
+    setIsProcessing(true);
+    setBrainWaveText("Fetching new prediction...");
+
+    try {
+      const matFilename = "t12.2022.05.05.mat";
+      const fileResponse = await fetch(`/mat-files/${matFilename}`);
+      if (!fileResponse.ok) throw new Error("Failed to load .mat file");
+      const file = await fileResponse.blob();
+
+      const formData = new FormData();
+      formData.append("file", file, matFilename);
+
+      const response = await fetch("http://localhost:5000/predict", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Failed to fetch prediction");
+
+      const result = await response.json();
+      console.log("Received result from Flask:", result);
+
+      if (Array.isArray(result.predictions) && result.predictions.length > 0) {
+        for (const prediction of result.predictions) {
+          setBrainWaveText(prediction);
+          await new Promise(resolve => setTimeout(resolve, 7000)); // wait 7s between each
+        }
+      } else {
+        setBrainWaveText("No predictions available");
+        await new Promise(resolve => setTimeout(resolve, 7000));
+      }
+    } catch (error) {
+      console.error("Failed to fetch from Flask API:", error);
+      setBrainWaveText("Error fetching data");
+      await new Promise(resolve => setTimeout(resolve, 7000));
+    } finally {
+      setIsProcessing(false);
+      fetchAndDisplayPredictions();
+    }
+  }
+
+// Start the loop once
+fetchAndDisplayPredictions();
+
+
 
     return () => {
       clearInterval(updateInterval);
       clearInterval(emotionInterval);
-      clearInterval(textInterval);
     };
   }, []);
 
