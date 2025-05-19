@@ -7,7 +7,7 @@ import EmotionHistory from '../visualizations/EmotionHistory';
 import BrainWaveText from '../visualizations/BrainWaveText';
 import PsychAssessment from '../visualizations/PsychAssessment';
 import FacialExpression from '../visualizations/FacialExpression';
-import ToneAnalysis from '../visualizations/ToneAnalysis';
+import ToneAnalysis, { SpeechEmotionEntry } from '../visualizations/ToneAnalysis';
 import FacialAnalysisPage from './FacialAnalysisPage';
 import { format } from 'date-fns';
 import { 
@@ -42,7 +42,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [eegEmotion, setEegEmotion] = useState(getRandomEmotion('eeg'));
   const [facialEmotion, setFacialEmotion] = useState('neutral');
   const [facialEmotionType, setFacialEmotionType] = useState<'neutral' | 'positive' | 'negative' | 'warning'>('neutral');
-  const [speechEmotion, setSpeechEmotion] = useState(getRandomEmotion('speech'));
+  const [speechEmotion, setSpeechEmotion] = useState('neutral');
+  const [speechEmotionType, setSpeechEmotionType] = useState<'neutral' | 'positive' | 'negative' | 'warning'>('neutral');
+  const [speechEmotionHistory, setSpeechEmotionHistory] = useState<SpeechEmotionEntry[]>([]);
   const [brainWaveText, setBrainWaveText] = useState(getRandomBrainWaveText());
   const [assessment, setAssessment] = useState(getRandomAssessment());
   const [isProcessing, setIsProcessing] = useState(false);
@@ -106,6 +108,19 @@ const Dashboard: React.FC<DashboardProps> = ({
     setFacialEmotionType(emotionType);
   };
 
+  // Handle speech emotion updates from ToneAnalysis component
+  const handleSpeechEmotionUpdate = (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => {
+    setSpeechEmotion(emotion);
+    setSpeechEmotionType(emotionType);
+    console.log(`Dashboard received speech emotion update: ${emotion} (${emotionType})`);
+  };
+
+  // Handle speech history updates
+  const handleSpeechHistoryUpdate = (history: SpeechEmotionEntry[]) => {
+    console.log(`Speech history update received with ${history.length} entries`);
+    setSpeechEmotionHistory(history);
+  };
+
   // Simulate real-time data updates
   useEffect(() => {
     const updateInterval = setInterval(() => {
@@ -146,12 +161,12 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
     }, 1000);
 
-    // Emotion updates at a slower rate - REMOVING facial emotion random updates
+    // Emotion updates at a slower rate - REMOVING facial and speech emotion random updates
     const emotionInterval = setInterval(() => {
       if (Math.random() > 0.7) setEcgEmotion(getRandomEmotion('ecg'));
       if (Math.random() > 0.7) setEegEmotion(getRandomEmotion('eeg'));
       // Facial emotion is now controlled by the API
-      if (Math.random() > 0.7) setSpeechEmotion(getRandomEmotion('speech'));
+      // Speech emotion is now controlled by the API
     }, 5000);
 
     // Simulate brain wave text processing
@@ -175,6 +190,15 @@ const Dashboard: React.FC<DashboardProps> = ({
       clearInterval(textInterval);
       clearInterval(assessmentInterval);
     };
+  }, []);
+
+  // Clear localStorage on initial load to start with fresh history
+  useEffect(() => {
+    // Uncomment the next line to reset history on page refresh
+    // localStorage.removeItem('speechEmotionHistory');
+    // localStorage.removeItem('facialEmotionHistory');
+    
+    console.log("Dashboard initialized");
   }, []);
 
   // Render function for the main dashboard
@@ -274,9 +298,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         className="md:col-span-1"
       >
         <ToneAnalysis 
-          data={toneData} 
           emotion={speechEmotion}
-          emotionType={mapEmotionToType(speechEmotion)}
+          emotionType={speechEmotionType}
+          onEmotionUpdate={handleSpeechEmotionUpdate}
+          onHistoryUpdate={handleSpeechHistoryUpdate}
         />
       </PatientCard>
 
@@ -320,7 +345,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
           <EmotionTag 
             emotion={speechEmotion} 
-            type={mapEmotionToType(speechEmotion)} 
+            type={speechEmotionType} 
             source="Speech" 
             pulsing={true}
           />
@@ -455,9 +480,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       >
         <div className="p-4">
           <ToneAnalysis 
-            data={toneData} 
             emotion={speechEmotion}
-            emotionType={mapEmotionToType(speechEmotion)}
+            emotionType={speechEmotionType}
+            onEmotionUpdate={handleSpeechEmotionUpdate}
+            onHistoryUpdate={handleSpeechHistoryUpdate}
           />
         </div>
         <div className="mt-6 flex justify-center">
@@ -465,7 +491,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <h3 className="text-xl font-semibold mb-4">Speech Emotional Marker</h3>
             <EmotionTag 
               emotion={speechEmotion} 
-              type={mapEmotionToType(speechEmotion)} 
+              type={speechEmotionType} 
               source="Speech" 
               pulsing={true}
               className="transform scale-125"
@@ -474,9 +500,39 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
         
         <div className="mt-8 border-t pt-4">
-          <EmotionHistory
-            emotions={speechHistory.map(item => ({ ...item, source: "Speech" }))}
-          />
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Historical Emotion Data</h3>
+          {speechEmotionHistory.length > 0 ? (
+            <div className="max-h-96 overflow-y-auto">
+              <table className="min-w-full bg-white">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 border-b text-left">Time</th>
+                    <th className="py-2 px-4 border-b text-left">Emotion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {speechEmotionHistory.map((entry, index) => (
+                    <tr key={index}>
+                      <td className="py-2 px-4 border-b">{entry.formattedTime}</td>
+                      <td className="py-2 px-4 border-b">
+                        <EmotionTag 
+                          emotion={entry.emotion} 
+                          type={
+                            ['happy', 'surprise'].includes(entry.emotion) ? 'positive' :
+                            ['sad', 'angry', 'fear', 'disgust'].includes(entry.emotion) ? 'negative' :
+                            ['contempt'].includes(entry.emotion) ? 'warning' : 'neutral'
+                          } 
+                          source="Speech" 
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No speech emotion history available yet. Start the microphone to begin capturing emotions.</p>
+          )}
         </div>
       </PatientCard>
     </div>
@@ -552,7 +608,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
           <EmotionTag 
             emotion={speechEmotion} 
-            type={mapEmotionToType(speechEmotion)} 
+            type={speechEmotionType} 
             source="Speech" 
             pulsing={true}
           />

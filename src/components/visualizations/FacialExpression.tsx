@@ -2,6 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Camera, Eye, EyeOff, Video, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+
+// Define interface for facial emotion history entries
+export interface FacialEmotionEntry {
+  emotion: string;
+  emotionType: 'neutral' | 'positive' | 'negative' | 'warning';
+  timestamp: Date;
+  formattedTime: string;
+}
 
 interface FacialExpressionProps {
   emotion?: string;
@@ -10,6 +19,7 @@ interface FacialExpressionProps {
   className?: string;
   onCameraToggle?: (active: boolean) => void;
   onEmotionUpdate?: (emotion: string, emotionType: 'neutral' | 'positive' | 'negative' | 'warning') => void;
+  onHistoryUpdate?: (history: FacialEmotionEntry[]) => void;
   fullView?: boolean;
 }
 
@@ -20,16 +30,59 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
   className,
   onCameraToggle,
   onEmotionUpdate,
+  onHistoryUpdate,
   fullView = false
 }) => {
   const [cameraActive, setCameraActive] = useState(initialCameraActive);
   const [emotion, setEmotion] = useState(initialEmotion);
   const [emotionType, setEmotionType] = useState(initialEmotionType);
+  const [emotionHistory, setEmotionHistory] = useState<FacialEmotionEntry[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const captureIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load history from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('facialEmotionHistory');
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+        // Convert string dates back to Date objects
+        const processedHistory = parsedHistory.map((entry: any) => ({
+          ...entry,
+          timestamp: new Date(entry.timestamp)
+        }));
+        setEmotionHistory(processedHistory);
+        
+        // Notify parent component if callback exists
+        if (onHistoryUpdate) {
+          onHistoryUpdate(processedHistory);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading facial emotion history:", error);
+      // Initialize with empty array if error
+      setEmotionHistory([]);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    if (emotionHistory.length > 0) {
+      try {
+        localStorage.setItem('facialEmotionHistory', JSON.stringify(emotionHistory));
+        
+        // Notify parent component of updated history
+        if (onHistoryUpdate) {
+          onHistoryUpdate(emotionHistory);
+        }
+      } catch (error) {
+        console.error("Error saving facial emotion history:", error);
+      }
+    }
+  }, [emotionHistory]);
 
   // Handle camera activation/deactivation
   useEffect(() => {
@@ -156,7 +209,38 @@ const FacialExpression: React.FC<FacialExpressionProps> = ({
           }
           setEmotionType(newEmotionType);
           
-          // Notify parent component of the emotion update
+          // Create a new emotion history entry
+          const now = new Date();
+          const newEntry: FacialEmotionEntry = {
+            emotion: data.emotion,
+            emotionType: newEmotionType,
+            timestamp: now,
+            formattedTime: format(now, 'HH:mm:ss')
+          };
+          
+          // Add to history (prepend to show newest first)
+          // Use functional update to avoid closure issues with stale state
+          setEmotionHistory(prevHistory => {
+            const updatedHistory = [newEntry, ...prevHistory]; 
+            // Limit history to 50 entries
+            const trimmedHistory = updatedHistory.slice(0, 50);
+            
+            // Save to localStorage
+            try {
+              localStorage.setItem('facialEmotionHistory', JSON.stringify(trimmedHistory));
+            } catch (error) {
+              console.error("Error saving to localStorage:", error);
+            }
+            
+            // Notify parent if callback exists
+            if (onHistoryUpdate) {
+              setTimeout(() => onHistoryUpdate(trimmedHistory), 0);
+            }
+            
+            return trimmedHistory;
+          });
+          
+          // Notify parent components
           if (onEmotionUpdate) {
             onEmotionUpdate(data.emotion, newEmotionType);
           }
