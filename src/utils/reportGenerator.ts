@@ -54,7 +54,7 @@ export const generatePatientReport = (patientData: any) => {
     doc.setPage(i);
     doc.setFontSize(10);
     doc.text(
-      `Mind State Navigator - Page ${i} of ${totalPages}`, 
+      `NeuroAI - Page ${i} of ${totalPages}`, 
       pageWidth / 2, 
       doc.internal.pageSize.height - 10, 
       { align: 'center' }

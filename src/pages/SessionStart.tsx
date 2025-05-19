@@ -40,7 +40,7 @@ const SessionStart = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center mb-8">
         <Brain className="w-16 h-16 text-mind-purple mb-4" />
-        <h1 className="text-3xl font-bold mb-2">Mind State Navigator</h1>
+        <h1 className="text-3xl font-bold mb-2">NeuroAI - Beyond Speech Therapy</h1>
         <p className="text-gray-600 text-center max-w-md">
           Start a new session to monitor patient's mental and emotional state in real-time
         </p>

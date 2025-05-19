@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onEndSession, onSectionChange, active
     <aside className="hidden md:flex md:w-56 lg:w-64 flex-col h-screen bg-white border-r p-4 fixed">
       <div className="flex items-center gap-2 mb-6 px-3 py-2">
         <Brain className="w-6 h-6 text-mind-purple" />
-        <h2 className="text-lg font-bold">Mind State</h2>
+        <h2 className="text-lg font-bold">NeuroAI</h2>
       </div>
       
       <div className="space-y-1">

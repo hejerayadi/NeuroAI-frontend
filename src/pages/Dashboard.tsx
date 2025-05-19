@@ -114,7 +114,7 @@ const DashboardPage = () => {
             endSessionLoading={isEndingSession}
           />
           <h1 className="text-xl font-bold">
-            Mind State Navigator 
+            NeuroAI - Beyond Speech Therapy
             {sessionType === 'gaming' && <span className="ml-2 text-blue-600">(Gaming Session)</span>}
           </h1>
         </header>
