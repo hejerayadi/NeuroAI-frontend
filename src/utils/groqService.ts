@@ -43,7 +43,7 @@ ${JSON.stringify(speechHistory, null, 2)}
 4. Brain Wave Speech Interpretation History:
 ${JSON.stringify(brainWaveHistory, null, 2)}
 
-Based on this data, provide a psychological assessment in the following JSON format:
+Based on this data that was captured every 5 seconds, provide a psychological assessment in the following JSON format:
 {
   "emotionalState": "A clear, concise, nominal description of the patient's overall emotional state that would be used as a title",
   "recommendations": ["List of 2-3 specific recommendations based on the data"],

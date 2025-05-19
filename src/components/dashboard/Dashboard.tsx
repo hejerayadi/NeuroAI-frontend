@@ -25,18 +25,23 @@ import {
 } from '@/utils/dummyData';
 import { groqService } from '@/utils/groqService';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardProps {
   activeSection?: string;
   sessionType?: 'normal' | 'gaming';
   patientName?: string;
+  doctorName?: string;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   activeSection = "dashboard",
   sessionType = 'normal',
-  patientName = ''
+  patientName = '',
+  doctorName = ''
 }) => {
+  const navigate = useNavigate();
+
   // State for our dummy data
   const [ecgData, setEcgData] = useState(generateEcgData(50));
   const [eegData, setEegData] = useState(generateEegData(50));
@@ -127,6 +132,10 @@ const Dashboard: React.FC<DashboardProps> = ({
   }>>([]);
 
   const [isGeneratingAssessment, setIsGeneratingAssessment] = useState(false);
+
+  // Add session start time
+  const [sessionStartTime] = useState(new Date());
+  const [sessionDuration, setSessionDuration] = useState('00:00:00');
 
   // Get patient data with the provided name if available
   const patient = patientName ? 
@@ -272,6 +281,37 @@ const Dashboard: React.FC<DashboardProps> = ({
     console.log("Dashboard initialized");
   }, []);
 
+  // Update session duration every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = now.getTime() - sessionStartTime.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setSessionDuration(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
+
+  // Function to end session and clean up
+  const endSession = () => {
+    // Clear all localStorage data
+    localStorage.removeItem('eegEmotionHistory');
+    localStorage.removeItem('speechEmotionHistory');
+    localStorage.removeItem('assessmentHistory');
+    localStorage.removeItem('ecgHistory');
+    localStorage.removeItem('eegHistory');
+    localStorage.removeItem('speechHistory');
+    localStorage.removeItem('brainWaveHistory');
+    
+    // Navigate to session start
+    navigate('/session-start');
+  };
+
   // Update assessment using Groq service
   const updateAssessment = async () => {
     try {
@@ -395,13 +435,22 @@ const Dashboard: React.FC<DashboardProps> = ({
         <PatientCard 
           title="EEG Brain Activity" 
           description="Real-time brain wave patterns"
+          className="h-full"
         >
-          <EnhancedEegVisualization
-            emotion={eegEmotion}
-            emotionType={mapEmotionToType(eegEmotion)}
-            showEog={true}
-            onEmotionUpdate={handleEegEmotionUpdate}
-          />
+          <div className="h-[calc(100%-2rem)]">
+            <EnhancedEegVisualization
+              emotion={eegEmotion}
+              emotionType={mapEmotionToType(eegEmotion)}
+              showEog={true}
+              onEmotionUpdate={handleEegEmotionUpdate}
+              className="h-full"
+            />
+          </div>
+          {eegHistory.length === 0 && (
+            <div className="mt-4 text-center text-gray-500">
+              No EEG history available yet. Start the session to begin capturing data.
+            </div>
+          )}
         </PatientCard>
       </div>
 
@@ -477,51 +526,11 @@ const Dashboard: React.FC<DashboardProps> = ({
             className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md p-6" 
           />
 
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <EmotionTag 
-              emotion={ecgEmotion} 
-              type={mapEmotionToType(ecgEmotion)} 
-              source="ECG" 
-              pulsing={true}
-            />
-            <EmotionTag 
-              emotion={eegEmotion} 
-              type={mapEmotionToType(eegEmotion)} 
-              source="EEG" 
-              pulsing={true}
-            />
-            <EmotionTag 
-              emotion={facialEmotion} 
-              type={facialEmotionType} 
-              source="Facial" 
-              pulsing={true}
-            />
-            <EmotionTag 
-              emotion={speechEmotion} 
-              type={speechEmotionType} 
-              source="Speech" 
-              pulsing={true}
-            />
-          </div>
-          
-          <div className="mt-8 border-t pt-4">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Assessment History</h3>
-            <div className="space-y-4">
-              {assessmentHistory.map((entry, index) => (
-                <div key={index} className="bg-white p-4 rounded-lg shadow">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm text-gray-500">
-                      {format(new Date(entry.timestamp), 'MMM d, yyyy HH:mm:ss')}
-                    </span>
-                  </div>
-                  <PsychAssessment 
-                    assessment={entry.assessment} 
-                    className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
-                  />
-                </div>
-              ))}
+          {assessmentHistory.length === 0 && (
+            <div className="mt-4 text-center text-gray-500">
+              No assessment history available. Generate an assessment to begin tracking.
             </div>
-          </div>
+          )}
         </PatientCard>
       </div>
     </div>
@@ -546,9 +555,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         />
         
         <div className="mt-8 border-t pt-4">
-          <EmotionHistory
-            emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
-          />
+          {eegHistory.length === 0 ? (
+            <div className="text-center text-gray-500">
+              No EEG history available yet. Start the session to begin capturing data.
+            </div>
+          ) : (
+            <EmotionHistory
+              emotions={eegHistory.map(item => ({ ...item, source: "EEG" }))}
+            />
+          )}
         </div>
       </PatientCard>
     </div>
@@ -584,9 +599,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
         
         <div className="mt-8 border-t pt-4">
-          <EmotionHistory
-            emotions={ecgHistory.map(item => ({ ...item, source: "ECG" }))}
-          />
+          {ecgHistory.length === 0 ? (
+            <div className="text-center text-gray-500">
+              No ECG history available yet. Start the session to begin capturing data.
+            </div>
+          ) : (
+            <EmotionHistory
+              emotions={ecgHistory.map(item => ({ ...item, source: "ECG" }))}
+            />
+          )}
         </div>
       </PatientCard>
     </div>
@@ -623,7 +644,11 @@ const Dashboard: React.FC<DashboardProps> = ({
         
         <div className="mt-8 border-t pt-4">
           <h3 className="text-lg font-medium text-gray-800 mb-4">Historical Emotion Data</h3>
-          {speechEmotionHistory.length > 0 ? (
+          {speechEmotionHistory.length === 0 ? (
+            <div className="text-center text-gray-500">
+              No speech emotion history available yet. Start the microphone to begin capturing emotions.
+            </div>
+          ) : (
             <div className="max-h-96 overflow-y-auto">
               <table className="min-w-full bg-white">
                 <thead>
@@ -652,8 +677,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </tbody>
               </table>
             </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">No speech emotion history available yet. Start the microphone to begin capturing emotions.</p>
           )}
         </div>
       </PatientCard>
@@ -688,10 +711,16 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
         
         <div className="mt-8 border-t pt-4">
-          <EmotionHistory
-            emotions={brainWaveHistory}
-            showText={true}
-          />
+          {brainWaveHistory.length === 0 ? (
+            <div className="text-center text-gray-500">
+              No brain wave history available yet. Start the session to begin capturing data.
+            </div>
+          ) : (
+            <EmotionHistory
+              emotions={brainWaveHistory}
+              showText={true}
+            />
+          )}
         </div>
       </PatientCard>
     </div>
@@ -720,51 +749,30 @@ const Dashboard: React.FC<DashboardProps> = ({
           className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md p-6" 
         />
 
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <EmotionTag 
-            emotion={ecgEmotion} 
-            type={mapEmotionToType(ecgEmotion)} 
-            source="ECG" 
-            pulsing={true}
-          />
-          <EmotionTag 
-            emotion={eegEmotion} 
-            type={mapEmotionToType(eegEmotion)} 
-            source="EEG" 
-            pulsing={true}
-          />
-          <EmotionTag 
-            emotion={facialEmotion} 
-            type={facialEmotionType} 
-            source="Facial" 
-            pulsing={true}
-          />
-          <EmotionTag 
-            emotion={speechEmotion} 
-            type={speechEmotionType} 
-            source="Speech" 
-            pulsing={true}
-          />
-        </div>
-        
-        <div className="mt-8 border-t pt-4">
-          <h3 className="text-lg font-medium text-gray-800 mb-4">Assessment History</h3>
-          <div className="space-y-4">
-            {assessmentHistory.map((entry, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg shadow">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-sm text-gray-500">
-                    {format(new Date(entry.timestamp), 'MMM d, yyyy HH:mm:ss')}
-                  </span>
-                </div>
-                <PsychAssessment 
-                  assessment={entry.assessment} 
-                  className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
-                />
-              </div>
-            ))}
+        {assessmentHistory.length === 0 ? (
+          <div className="mt-4 text-center text-gray-500">
+            No assessment history available. Generate an assessment to begin tracking.
           </div>
-        </div>
+        ) : (
+          <div className="mt-8 border-t pt-4">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Assessment History</h3>
+            <div className="space-y-4">
+              {assessmentHistory.map((entry, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg shadow">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-sm text-gray-500">
+                      {format(new Date(entry.timestamp), 'MMM d, yyyy HH:mm:ss')}
+                    </span>
+                  </div>
+                  <PsychAssessment 
+                    assessment={entry.assessment} 
+                    className="bg-mind-softgray border-l-4 border-mind-darkpurple shadow-md" 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </PatientCard>
     </div>
   );
@@ -799,7 +807,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <DashboardHeader 
           patientName={patient.name} 
           patientId={patient.id} 
-          sessionTime={patient.sessionTime} 
+          sessionTime={sessionDuration} 
           patientStatus={patient.status}
           patientImageUrl={patient.imageUrl}
         />
